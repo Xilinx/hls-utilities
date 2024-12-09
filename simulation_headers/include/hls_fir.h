@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef X_HLS_FIR_H
 #define X_HLS_FIR_H
@@ -37,7 +21,7 @@
 #ifndef __SYNTHESIS__
 #include <math.h>
 #endif
-#define CEIL(a) (((a) == (int) (a)) ? (int) (a) : ((int) (a)) + 1)
+#define CEIL(a) (((a) == (int) (a)) ? (int) (a) : (((int) (a)) + 1))
 
 #ifndef AESL_SYN
 #ifndef __SYNTHESIS__
@@ -308,7 +292,7 @@ static_assert((CONFIG_T::input_length % CEIL(1./CONFIG_T::sample_period) == 0),
                 "pattern_list", "P4-0,P4-1,P4-2,P4-3,P4-4",
                 "number_paths", CONFIG_T::num_paths,
                 "ratespecification", CONFIG_T::rate_specification,
-                "sampleperiod", 1./CEIL(1./CONFIG_T::sample_period),
+                "sampleperiod", (CONFIG_T::sample_period > 1) ? CEIL(CONFIG_T::sample_period) : (1./CEIL(1./CONFIG_T::sample_period)),
                 "sample_frequency", CONFIG_T::sample_frequency,
                 "clock_frequency", "300.0",
                 "coefficient_sign", CONFIG_T::coeff_sign,
@@ -773,7 +757,208 @@ static_assert((CONFIG_T::input_length % CEIL(1./CONFIG_T::sample_period) == 0),
         }
 
 };
+
+
+namespace ip_fir {
+
+template<unsigned int num_coefficients,
+         unsigned int num_coeff_sets>
+struct vivado_fir_config : hls::ip_fir::params_t {
+    static const double coeff_vec[num_coefficients * num_coeff_sets];
+};
+
+template<unsigned int num_coefficients,
+         unsigned int num_chans,
+         unsigned int num_coeff_sets,
+         bool coefficient_reload,
+         enum hls::ip_fir::filter_type filt_type,
+         enum hls::ip_fir::rate_change_type rate_change_type,
+         unsigned int interpolation_rate,
+         unsigned int decimation_rate,
+         unsigned int zero_packing_factor,
+         enum hls::ip_fir::chan_seq channel_sequence,
+         unsigned int number_paths,
+         enum hls::ip_fir::rate_specification rate_spec,
+         unsigned int sampleperiod_num,
+         unsigned int sampleperiod_den,
+         enum hls::ip_fir::value_sign coefficient_sign,
+         enum hls::ip_fir::quantization quant,
+         unsigned int coefficient_width,
+         unsigned int coefficient_fractional_bits,
+         bool best_prec,
+         enum hls::ip_fir::coeff_structure coefficient_structure,
+         enum hls::ip_fir::value_sign input_sign,
+         unsigned int data_width,
+         unsigned int data_fractional_bits,
+         enum hls::ip_fir::output_rounding_mode out_rounding_mode,
+         unsigned int out_width,
+         unsigned int out_fractional_bits,
+         enum hls::ip_fir::filter_arch filter_architecture,
+         enum hls::ip_fir::optimization_goal opt_goal,
+         unsigned int inter_col_pipe_length,
+         unsigned int col_config,
+         enum hls::ip_fir::config_sync_mode s_config_sync_mode,
+         enum hls::ip_fir::config_method s_config_method>
+struct fir_config : vivado_fir_config<num_coefficients, num_coeff_sets> {
+    static const unsigned input_width = data_width;
+    static const unsigned input_fractional_bits = data_fractional_bits;
+    static const unsigned output_width = out_width;
+    static const unsigned output_fractional_bits = out_fractional_bits;
+    static const unsigned coeff_width = coefficient_width;
+    static const unsigned coeff_fractional_bits = coefficient_fractional_bits;
+    static const unsigned config_width = 8;
+    static const unsigned num_coeffs = num_coefficients;
+    static const unsigned coeff_sets = num_coeff_sets;
+    static const unsigned input_length = num_coefficients;
+    static const unsigned output_length = num_coefficients;
+    static const unsigned num_channels = num_chans;
+    static const unsigned total_num_coeff = num_coefficients * num_coeff_sets;
+    static const bool reloadable = coefficient_reload;
+    static const unsigned filter_type = filt_type;
+    static const unsigned rate_change = rate_change_type;
+    static const unsigned interp_rate = interpolation_rate;
+    static const unsigned decim_rate = decimation_rate;
+    static const unsigned zero_pack_factor = zero_packing_factor;
+    static const unsigned chan_seq = channel_sequence;
+    static const unsigned rate_specification = rate_spec;
+    static constexpr double sample_period = (float) sampleperiod_num / (float) sampleperiod_den;
+    static constexpr double sample_frequency = 0.001;
+    static const unsigned quantization = quant;
+    static const bool best_precision = best_prec;
+    static const unsigned coeff_structure = coefficient_structure;
+    static const unsigned output_rounding_mode = out_rounding_mode;
+    static const unsigned filter_arch = filter_architecture;
+    static const unsigned optimization_goal = opt_goal;
+    static const unsigned inter_column_pipe_length = inter_col_pipe_length;
+    static const unsigned column_config = col_config;
+    static const unsigned config_sync_mode = s_config_sync_mode;
+    static const unsigned config_method = s_config_method;
+    static const unsigned coeff_padding = 0;
+    static const unsigned data_sign = input_sign;
+    static const unsigned coeff_sign = coefficient_sign;
+};
+
+
+template<typename in_t, 
+         typename out_t,
+         unsigned int sampleperiod_num,
+         unsigned int sampleperiod_den,
+         int LENGTH>
+void data_copy(in_t in[LENGTH], out_t out[LENGTH])
+{
+    const float sampleperiod = (float) sampleperiod_num / (float) sampleperiod_den;
+
+    for(unsigned i = 0; i < LENGTH; i++) {
+#pragma HLS unroll factor=CEIL(1./sampleperiod)
+        out[i] = in[i];
+    }
+}
+
+}; // namespace ip_fir
 } // namespace hls
+
+namespace xf {
+namespace dsp {
+template<unsigned int num_coeffs,
+         unsigned int coefficient_width = 16,
+         unsigned int coefficient_fractional_bits = 0,
+         unsigned int data_width = 16,
+         unsigned int data_fractional_bits = 0,
+         unsigned int output_width = 24,
+         unsigned int output_fractional_bits = 0,
+         unsigned int num_channels = 1,
+         unsigned int coeff_sets = 1,
+         bool coefficient_reload = false,
+         enum hls::ip_fir::filter_type filter_type = hls::ip_fir::single_rate,
+         enum hls::ip_fir::rate_change_type rate_change_type = hls::ip_fir::integer,
+         unsigned int interpolation_rate = 1,
+         unsigned int decimation_rate = 1,
+         unsigned int zero_pack_factor = 1,
+         enum hls::ip_fir::chan_seq channel_sequence = hls::ip_fir::basic,
+         unsigned int number_paths = 1,
+         enum hls::ip_fir::rate_specification rate_specification = hls::ip_fir::input_period,
+         unsigned int sampleperiod_num = 1,
+         unsigned int sampleperiod_den = 1,
+         enum hls::ip_fir::value_sign coefficient_sign = hls::ip_fir::value_signed,
+         enum hls::ip_fir::quantization quantization = hls::ip_fir::integer_coefficients,
+         bool best_precision = false,
+         enum hls::ip_fir::coeff_structure coefficient_structure = hls::ip_fir::inferred,
+         enum hls::ip_fir::value_sign data_sign = hls::ip_fir::value_signed,
+         enum hls::ip_fir::output_rounding_mode output_rounding_mode = hls::ip_fir::full_precision,
+         enum hls::ip_fir::filter_arch filter_architecture = hls::ip_fir::systolic_multiply_accumulate,
+         enum hls::ip_fir::optimization_goal optimization_goal = hls::ip_fir::area,
+         unsigned int inter_column_pipe_length = 4,
+         unsigned int column_config = 1,
+         enum hls::ip_fir::config_sync_mode s_config_sync_mode = hls::ip_fir::on_vector,
+         enum hls::ip_fir::config_method s_config_method = hls::ip_fir::single,
+         typename data_in_t,
+         typename data_out_t>
+void vivado_fir(
+    data_in_t in[num_coeffs * num_channels],
+    data_out_t out[num_coeffs * num_channels])
+{
+    const float sampleperiod = (float) sampleperiod_num / (float) sampleperiod_den;
+    const unsigned data_axi_width = ((data_width+7)>>3)<<3;
+    const unsigned output_axi_width = ((output_width+7)>>3)<<3;
+    const unsigned coefficient_axi_width = ((coefficient_width+7)>>3)<<3;
+
+    typedef ap_fixed<data_axi_width, data_axi_width - data_fractional_bits> data_axi_t;
+    typedef ap_fixed<output_axi_width, output_axi_width - output_fractional_bits> output_axi_t;
+
+    #pragma HLS array_reshape cyclic variable=in factor=CEIL(1./sampleperiod)
+    #pragma HLS array_reshape cyclic variable=out factor=CEIL(1./sampleperiod)
+
+    typedef hls::ip_fir::fir_config<num_coeffs,
+         num_channels,
+         coeff_sets,
+         coefficient_reload,
+         filter_type,
+         rate_change_type,
+         interpolation_rate,
+         decimation_rate,
+         zero_pack_factor,
+         channel_sequence,
+         number_paths,
+         rate_specification,
+         sampleperiod_num,
+         sampleperiod_den,
+         coefficient_sign,
+         quantization,
+         coefficient_axi_width,
+         coefficient_fractional_bits,
+         best_precision,
+         coefficient_structure,
+         data_sign,
+         data_axi_width,
+         data_fractional_bits,
+         output_rounding_mode,
+         output_axi_width,
+         output_fractional_bits,
+         filter_architecture,
+         optimization_goal,
+         inter_column_pipe_length,
+         column_config,
+         s_config_sync_mode,
+         s_config_method> config;
+
+    hls::FIR<config> fir;
+
+    data_axi_t fir_in[num_coeffs * num_channels];
+    #pragma HLS stream variable=fir_in depth=2
+    #pragma HLS array_reshape cyclic variable=fir_in factor=CEIL(1./sampleperiod)
+
+    output_axi_t fir_out[num_coeffs * num_channels];
+    #pragma HLS stream variable=fir_out depth=2
+    #pragma HLS array_reshape cyclic variable=fir_out factor=CEIL(1./sampleperiod)
+
+    // These copies are needed to widen the data to a multiple of 8, as required by the FIR IP
+    hls::ip_fir::data_copy<data_in_t, data_axi_t, sampleperiod_num, sampleperiod_den, num_coeffs * num_channels>(in, fir_in);
+    fir.run(fir_in, fir_out);
+    hls::ip_fir::data_copy<output_axi_t, data_out_t, sampleperiod_num, sampleperiod_den, num_coeffs * num_channels>(fir_out, out);
+}
+} // namespace dsp
+} // namespace xf
+
 
 #endif // __cplusplus
 #endif // X_HLS_FIR_H

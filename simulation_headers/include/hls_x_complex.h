@@ -1,26 +1,10 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
-
-#ifndef HLS_X_COMPLE_H
-#define HLS_X_COMPLE_H
+#ifndef HLS_X_COMPLEX_H
+#define HLS_X_COMPLEX_H
 
 #ifndef __SYNTHESIS__
 #include <iostream>
@@ -54,12 +38,12 @@ public:
   // Multiply return type
   typedef x_complex<T> MULT_RT;
   // default constructors
-  x_complex() = default;
-  ~x_complex() = default;
-  x_complex(x_complex<T> &&) = default;
-  x_complex(const x_complex<T> &z) = default;
-  x_complex<T> &operator=(x_complex<T> &&) = default;
-  x_complex<T> &operator=(const x_complex<T> &) = default;
+  inline x_complex() = default;
+  inline ~x_complex() = default;
+  inline x_complex(x_complex<T> &&) = default;
+  inline x_complex(const x_complex<T> &z) = default;
+  inline x_complex<T> &operator=(x_complex<T> &&) = default;
+  inline x_complex<T> &operator=(const x_complex<T> &) = default;
   // other constructors
   inline x_complex(const T &r, const T &i) : re(r), im(i){};
 

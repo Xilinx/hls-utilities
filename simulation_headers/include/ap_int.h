@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef __AP_INT_H__
 #define __AP_INT_H__
@@ -32,6 +16,8 @@
 /// Sign Arbitrary Precision Type.
 template <int _AP_W>
 struct ap_int : ap_int_base<_AP_W, true> {
+  static_assert(_AP_W > 0, "ap_int bitwidth must be positive");
+
   typedef ap_int_base<_AP_W, true> Base;
   // Constructor
   INLINE NODEBUG ap_int() = default; //The default constructor is explicitly stated.
@@ -195,6 +181,8 @@ struct ap_int : ap_int_base<_AP_W, true> {
 /// Unsigned Arbitrary Precision Type.
 template <int _AP_W>
 struct ap_uint : ap_int_base<_AP_W, false> {
+  static_assert(_AP_W > 0, "ap_uint bitwidth must be positive");
+
   typedef ap_int_base<_AP_W, false> Base;
   // Constructor
   INLINE NODEBUG ap_uint() = default; //The default constructor is explicitly stated.

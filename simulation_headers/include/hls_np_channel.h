@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef X_HLS_NP_CHANNEL_SIM_H
 #define X_HLS_NP_CHANNEL_SIM_H
@@ -69,7 +53,7 @@ public:
     }
 #else
     std::unique_lock<std::mutex> ul(_mutex);
-    stream_globals::incr_blocked_counter();
+    stream_globals<false>::incr_blocked_counter();
     while (_data.empty()) {
 #ifndef HLS_STREAM_THREAD_UNSAFE
       while (invalid) {
@@ -78,7 +62,7 @@ public:
       _condition_var.wait(ul);
 #endif
     }
-    stream_globals::decr_blocked_counter();
+    stream_globals<false>::decr_blocked_counter();
 #endif
     
     memcpy(elem, _data.front().data(), sizeof(T));
@@ -105,8 +89,8 @@ public:
     std::array<char, sizeof(T)> elem_data;
     memcpy(elem_data.data(), elem, sizeof(T));
     _data.push_back(elem_data);
-    if (stream_globals::get_max_size() < _data.size())
-        stream_globals::get_max_size() = _data.size();
+    if (stream_globals<false>::get_max_size() < _data.size())
+        stream_globals<false>::get_max_size() = _data.size();
 #ifndef HLS_STREAM_THREAD_UNSAFE
     _condition_var.notify_one();
 #endif

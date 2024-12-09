@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef __AP_INT_BASE_H__
 #define __AP_INT_BASE_H__
@@ -138,6 +122,8 @@ struct _ap_int_factory<_AP_W2,false> { typedef ap_uint<_AP_W2> type; };
 
 template <int _AP_W, bool _AP_S>
 struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
+ static_assert(_AP_W > 0, "ap_int_base bitwidth must be positive");
+
  private:
   HLS_CONSTEXPR INLINE NODEBUG int countLeadingOnes() const {
 #if (defined __AP_INT_WARNING__) && (!defined __SYNTHESIS__)
@@ -1220,38 +1206,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   // to the first one bit.
   HLS_CONSTEXPR INLINE NODEBUG int countLeadingZeros() const {
 #ifdef __SYNTHESIS__
-    if (_AP_W <= 32) {
-      ap_int_base<32, false> t(-1UL), x;
-      x.V = _AP_ROOT_op_get_range(this->V, _AP_W - 1, 0); // reverse
-      t.V = _AP_ROOT_op_set_range(t.V, 0, _AP_W - 1, x.V);
-      return __builtin_ctz(t.V); // count trailing zeros.
-    } else if (_AP_W <= 64) {
-      ap_int_base<64, false> t(-1ULL);
-      ap_int_base<64, false> x;
-      x.V = _AP_ROOT_op_get_range(this->V, _AP_W - 1, 0); // reverse
-      t.V = _AP_ROOT_op_set_range(t.V, 0, _AP_W - 1, x.V);
-      return __builtin_ctzll(t.V); // count trailing zeros.
-    } else {
-      enum { __N = (_AP_W + 63) / 64 };
-      int NZeros = 0;
-      int i = 0;
-      bool hitNonZero = false;
-      for (i = 0; i < __N - 1; ++i) {
-        ap_int_base<64, false> t;
-        t.V = _AP_ROOT_op_get_range(this->V, _AP_W - i * 64 - 64, _AP_W - i * 64 - 1);
-        NZeros += hitNonZero ? 0 : __builtin_clzll(t.V); // count leading zeros.
-        hitNonZero |= (t.V != 0);
-      }
-      if (!hitNonZero) {
-        ap_int_base<64, false> t(-1ULL);
-        enum { REST = (_AP_W - 1) % 64 };
-        ap_int_base<64, false> x;
-        x.V = _AP_ROOT_op_get_range(this->V, 0, REST);
-        t.V = _AP_ROOT_op_set_range(t.V, 63 - REST, 63, x.V);
-        NZeros += __builtin_clzll(t.V);
-      }
-      return NZeros;
-    }
+    return __fpga_ctlz(this->V);
 #else
     return (Base::V).countLeadingZeros();
 #endif

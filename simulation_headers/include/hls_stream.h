@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef X_HLS_STREAM_SIM_H
 #define X_HLS_STREAM_SIM_H
@@ -73,6 +57,7 @@ public:
   virtual size_t size() = 0;
 };
 
+template<bool DIRECTIO>
 class stream_globals {
 public:
   static void print_max_size() {
@@ -106,8 +91,8 @@ public:
     if (!init_done.test_and_set()) {
       // Perform global initialization actions once
       // Register function executed at exit
-      std::atexit(print_max_size);
-
+      if (!DIRECTIO)
+        std::atexit(print_max_size);
 #if defined(__HLS_COSIM__) 
       // Detach the thread to avoid error at end with unwaited thread
       t.detach();
@@ -138,14 +123,15 @@ private:
   static void deadlock_thread() {
     while (1) {
       std::this_thread::sleep_for(std::chrono::seconds(1));
-      if (stream_globals::check_deadlock()) {
-        if (get_task_counter()) {
+      if (check_deadlock()) {
+        if (!DIRECTIO) {
+          if (get_task_counter()) {
             std::cout << "ERROR [HLS SIM]: deadlock detected when simulating hls::tasks." 
                     << std::endl;
             std::cout << "Execute C simulation in debug mode in the GUI and examine the"
                     << " source code location of all the blocked hls::stream::read()"
                     << " calls to debug." << std::endl;
-        } else {
+          } else {
             std::cout << "ERROR [HLS SIM]: an hls::stream is read while empty,"
                     << " which may result in RTL simulation hanging." << std::endl;
             std::cout << "If this is not expected, execute C simulation in debug mode in"
@@ -155,6 +141,13 @@ private:
                     << " to -cflags to turn this error into a warning and allow empty"
                     << " hls::stream reads to return the default value for the data type."
                     << std::endl;
+          }
+        } else {
+          std::cout << "ERROR [HLS SIM]: an hls::directio is read while empty,"
+                  << " which may result in RTL simulation hanging." << std::endl;
+          std::cout << "If this is not expected, execute C simulation in debug mode in"
+                  << " the GUI and examine the source code location of the blocked"
+                  << " hls::directio::read() call to debug." << std::endl;
         }
         abort();
       }
@@ -174,7 +167,7 @@ private:
   }
 };
 
-template<size_t SIZE>
+template<size_t SIZE, bool DIRECTIO>
 class stream_entity {
 public:
 #ifdef HLS_STREAM_THREAD_UNSAFE
@@ -196,18 +189,23 @@ public:
     std::unique_lock<std::mutex> ul(mutex);
 #endif
     // needed to start the deadlock detector and size reporter
-    stream_globals::start_threads();
+    stream_globals<DIRECTIO>::start_threads();
 
-    if (data.empty()) { 
+    if (data.empty()) {
+      bool allow_read_empty = false;
 #ifdef ALLOW_EMPTY_HLS_STREAM_READS
-      std::cout << "WARNING [HLS SIM]: hls::stream '"
-                << name
-                << "' is read while empty,"
-                << " which may result in RTL simulation hanging."
-                << std::endl;
-      return false;
-#else
-        stream_globals::incr_blocked_counter();
+      if (!DIRECTIO)
+        allow_read_empty = true;
+#endif
+      if (allow_read_empty) {
+        std::cout << "WARNING [HLS SIM]: hls::stream '"
+                  << name
+                  << "' is read while empty,"
+                  << " which may result in RTL simulation hanging."
+                  << std::endl;
+        return false;
+      } else {
+        stream_globals<DIRECTIO>::incr_blocked_counter();
         while (data.empty()) {
 #ifndef HLS_STREAM_THREAD_UNSAFE
           while (invalid) { 
@@ -216,8 +214,8 @@ public:
           condition_var.wait(ul);
 #endif
         }
-        stream_globals::decr_blocked_counter();
-#endif
+        stream_globals<DIRECTIO>::decr_blocked_counter();
+      }
     }
     std::array<char, SIZE> &elem_data = data.front();
     memcpy(elem, elem_data.data(), SIZE);
@@ -240,10 +238,10 @@ public:
     data.push_back(elem_data);
     
     // needed to start the deadlock detector and size reporter
-    stream_globals::start_threads();
+    stream_globals<DIRECTIO>::start_threads();
     
-    if (stream_globals::get_max_size() < data.size()) 
-        stream_globals::get_max_size() = data.size();
+    if (stream_globals<DIRECTIO>::get_max_size() < data.size()) 
+        stream_globals<DIRECTIO>::get_max_size() = data.size();
 #ifndef HLS_STREAM_THREAD_UNSAFE
     condition_var.notify_one();
 #endif
@@ -295,7 +293,7 @@ public:
 #endif
 };
 
-template<size_t SIZE>
+template<size_t SIZE, bool DIRECTIO>
 class stream_map {
 public:
   static size_t count(void *p) {
@@ -314,7 +312,7 @@ public:
     map[p];
   }
 
-  static stream_entity<SIZE> &get_entity(void *p) {
+  static stream_entity<SIZE, DIRECTIO> &get_entity(void *p) {
 #ifndef HLS_STREAM_THREAD_UNSAFE
     std::lock_guard<std::mutex> lg(get_mutex());
 #endif
@@ -328,9 +326,9 @@ private:
     return *mutex;
   }
 #endif
-  static std::unordered_map<void*, stream_entity<SIZE> > &get_map() {
-    static std::unordered_map<void*, stream_entity<SIZE> > *map = 
-        new std::unordered_map<void*, stream_entity<SIZE> >();
+  static std::unordered_map<void*, stream_entity<SIZE, DIRECTIO> > &get_map() {
+    static std::unordered_map<void*, stream_entity<SIZE, DIRECTIO> > *map = 
+        new std::unordered_map<void*, stream_entity<SIZE, DIRECTIO> >();
     return *map;
   }
 };
@@ -344,13 +342,13 @@ class stream<__STREAM_T__, 0>
     using value_type = __STREAM_T__;
 
   private:
-  typedef stream_map<sizeof(__STREAM_T__)> map_t;
+  typedef stream_map<sizeof(__STREAM_T__), false> map_t;
 
   protected:
 #if defined(__VITIS_HLS__)
     __STREAM_T__ _data;
 #else
-    stream_entity<sizeof(__STREAM_T__)> _data;
+    stream_entity<sizeof(__STREAM_T__), false> _data;
 #endif
 
   protected:
@@ -405,7 +403,7 @@ class stream<__STREAM_T__, 0>
         return *this;
     }
 
-    stream_entity<sizeof(__STREAM_T__)> &get_entity() {
+    stream_entity<sizeof(__STREAM_T__), false> &get_entity() {
 #if defined(__VITIS_HLS__)
       return map_t::get_entity(&_data);
 #else

@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef X_HLS_STREAMOFBLOCKS_H
 #define X_HLS_STREAMOFBLOCKS_H
@@ -85,7 +69,7 @@ class stream_buf {
 
   ALWAYS_INLINE __STREAM_T__& read_acquire() {
     // needed to start the deadlock detector and size reporter
-    stream_globals::start_threads();
+    stream_globals<false>::start_threads();
 
     if (readLocks > 0) {
         std::cerr << "ERROR: acquiring " << name << " for reading more than once before releasing. Use braces to limit the lifetime of the lock object." << std::endl;
@@ -104,7 +88,7 @@ class stream_buf {
                 << std::endl;
         return *new __STREAM_T__[1];
 #else
-        stream_globals::incr_blocked_counter();
+        stream_globals<false>::incr_blocked_counter();
         while (!data.size()) {
 #ifndef HLS_STREAM_THREAD_UNSAFE
           while (invalid) {
@@ -113,7 +97,7 @@ class stream_buf {
           condition_var.wait(ul);
 #endif
         }
-        stream_globals::decr_blocked_counter();
+        stream_globals<false>::decr_blocked_counter();
 #endif
     }
     return *data.front();
@@ -133,7 +117,7 @@ class stream_buf {
  
   ALWAYS_INLINE __STREAM_T__& write_acquire() {
     // needed to start the deadlock detector and size reporter
-    stream_globals::start_threads();
+    stream_globals<false>::start_threads();
 
     if (writeLocks > 0) {
         std::cerr << "ERROR: acquiring " << name << " for writing more than once before releasing. Use braces to limit the lifetime of the lock object." << std::endl;

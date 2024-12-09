@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef _AUTOPILOT_SSDM_OP_H_
 #define _AUTOPILOT_SSDM_OP_H_
@@ -27,7 +11,7 @@
 #define ap_wait() _ssdm_op_Wait(1)
 #define ap_wait_n(X) { \
     for(unsigned __i__=0; __i__<X; ++__i__) { \
-        _ssdm_Unroll(0,0,0, ""); \
+_Pragma( "HLS unroll ") \
         _ssdm_op_Wait(1); \
     } \
 }
@@ -220,9 +204,6 @@ extern "C" {
     void _ssdm_RegionBegin(...) SSDM_SPEC_ATTR;
     void _ssdm_RegionEnd(...) SSDM_SPEC_ATTR;
 
-    void _ssdm_Unroll(...) SSDM_SPEC_ATTR;
-    void _ssdm_UnrollRegion(...) SSDM_SPEC_ATTR;
-
     void _ssdm_InlineAll(...) SSDM_SPEC_ATTR;
     void _ssdm_InlineLoop(...) SSDM_SPEC_ATTR;
     void _ssdm_Inline(...) SSDM_SPEC_ATTR;
@@ -372,9 +353,6 @@ extern "C" {
 
     void _ssdm_RegionBegin() SSDM_SPEC_ATTR;
     void _ssdm_RegionEnd() SSDM_SPEC_ATTR;
-
-    void _ssdm_Unroll() SSDM_SPEC_ATTR;
-    void _ssdm_UnrollRegion() SSDM_SPEC_ATTR;
 
     void _ssdm_InlineAll() SSDM_SPEC_ATTR;
     void _ssdm_InlineLoop() SSDM_SPEC_ATTR;

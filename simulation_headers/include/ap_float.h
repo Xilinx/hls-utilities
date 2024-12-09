@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 #ifndef __AP_FLOAT_H__
 #define __AP_FLOAT_H__
 
@@ -32,10 +16,22 @@
 #endif
 
 #include <limits>
+#include <type_traits>
 #ifndef __SYNTHESIS__
 #include <iostream>
 #endif
 
+// Forward declaration(s)
+template<int W, int E>
+class ap_float;
+
+// Shorthand for native type equivalents
+using ap_float_half = ap_float<16, 5>;
+using ap_float_single = ap_float<32, 8>;
+using ap_float_double = ap_float<64, 11>;
+
+namespace {
+// Log base 2 (ceiling) helper function
 static constexpr int log2_ceil(int val) {
   if (val <= 0)
     return std::numeric_limits<int>::lowest();
@@ -44,6 +40,7 @@ static constexpr int log2_ceil(int val) {
   //return 32 - __builtin_clz(val - 1);
   return log2_ceil((val + 1) / 2) + 1;
 }
+} // anonymous namespace
 
 /** Arbitrary Precision Floating-Point Class
  *   - W: Total bitwidth (half = 16, float = 32, double = 64)
@@ -291,10 +288,15 @@ public:
     exponent_ref() = biased;
   }
 
-  // Conversion from native floating point types
+  // Test if conversion to/from each native types are free
+  static constexpr bool is_half = W == 16 && E == 5;
+  static constexpr bool is_single = W == 32 && E == 8;
+  static constexpr bool is_double = W == 64 && E == 11;
+
+  // Conversion from native floating point 
+  template<typename Enabled = void>
   INLINE NODEBUG
-  explicit ap_float(const half &h) noexcept {
-    static_assert(W == 16 && E == 5, "conversion from half only supported on ap_float<16, 5>");
+  ap_float(const half &h, std::enable_if_t<is_half, Enabled>* = 0) noexcept {
 #ifndef __SYNTHESIS__
     xip_fpo_t val;
     this->init_xip_fpo_t(val);
@@ -302,13 +304,18 @@ public:
     this->from_xip_fpo_t(val);
     this->fini_xip_fpo_t(val);
 #else
-    bits = (const decltype(bits) &)h;
+    bits = reinterpret_cast<const decltype(bits) &>(h);
 #endif
   }
 
+  template<typename Enabled = void>
   INLINE NODEBUG
-  explicit ap_float(const float &f) noexcept {
-    static_assert(W == 32 && E == 8, "conversion from float only supported on ap_float<32, 8>");
+  ap_float(const half &h, std::enable_if_t<!is_half, Enabled>* = 0) noexcept
+      : ap_float(ap_float_half(h)) {}
+
+  template<typename Enabled = void>
+  INLINE NODEBUG
+  ap_float(const float &f, std::enable_if_t<is_single, Enabled>* = 0) noexcept {
 #ifndef __SYNTHESIS__
     xip_fpo_t val;
     this->init_xip_fpo_t(val);
@@ -316,13 +323,18 @@ public:
     this->from_xip_fpo_t(val);
     this->fini_xip_fpo_t(val);
 #else
-    bits = (const decltype(bits) &)f;
+    bits = reinterpret_cast<const decltype(bits) &>(f);
 #endif
   }
-
+  
+  template<typename Enabled = void>
   INLINE NODEBUG
-  explicit ap_float(const double &d) noexcept {
-    static_assert(W == 64 && E == 11, "conversion from double only supported on ap_float<64, 11>");
+  ap_float(const float &f, std::enable_if_t<!is_single, Enabled>* = 0) noexcept
+      : ap_float(ap_float_single(f)) {}
+
+  template<typename Enabled = void>
+  INLINE NODEBUG
+  ap_float(const double &d, std::enable_if_t<is_double, Enabled>* = 0) noexcept {
 #ifndef __SYNTHESIS__
     xip_fpo_t val;
     this->init_xip_fpo_t(val);
@@ -330,27 +342,65 @@ public:
     this->from_xip_fpo_t(val);
     this->fini_xip_fpo_t(val);
 #else
-    bits = (const decltype(bits) &)d;
+    bits = reinterpret_cast<const decltype(bits) &>(d);
 #endif
   }
+  
+  template<typename Enabled = void>
+  INLINE NODEBUG
+  ap_float(const double &d, std::enable_if_t<!is_double, Enabled>* = 0) noexcept :
+      ap_float(ap_float_double(d)) {}
 
   // Conversion to native floating point types
+  template<typename Enabled = half>
+  INLINE NODEBUG
+  std::enable_if_t<is_half, Enabled> to_half() const noexcept {
+    return *(reinterpret_cast<const half *>(this));
+  }
+
+  template<typename Enabled = half>
+  INLINE NODEBUG
+  std::enable_if_t<!is_half, Enabled> to_half() const noexcept {
+    return ap_float_half(*this).to_half();
+  }
+
+  template<typename Enabled = float>
+  INLINE NODEBUG
+  std::enable_if_t<is_single, Enabled> to_float() const noexcept {
+    return *(reinterpret_cast<const float *>(this));
+  }
+
+  template<typename Enabled = float>
+  INLINE NODEBUG
+  std::enable_if_t<!is_single, Enabled> to_float() const noexcept {
+    return ap_float_single(*this).to_float();
+  }
+
+  template<typename Enabled = double>
+  INLINE NODEBUG
+  std::enable_if_t<is_double, Enabled> to_double() const noexcept {
+    return *(reinterpret_cast<const double *>(this));
+  }
+
+  template<typename Enabled = double>
+  INLINE NODEBUG
+  std::enable_if_t<!is_double, Enabled> to_double() const noexcept {
+    return ap_float_double(*this).to_double();
+  }
+
   INLINE NODEBUG
   explicit operator half() const noexcept {
-    static_assert(W == 16 && E == 5, "conversion to half only supported on ap_float<16, 5>");
-    return *((const half *)this);
+    return to_half();
   }
 
   INLINE NODEBUG
   explicit operator float() const noexcept {
-    static_assert(W == 32 && E == 8, "conversion from float only supported on ap_float<32, 8>");
-    return *((const float *)this);
+    return to_float();
   }
 
   INLINE NODEBUG
   explicit operator double() const noexcept {
-    static_assert(W == 64 && E == 11, "conversion from double only supported on ap_float<64, 11>");
-    return *((const double *)this);
+    return to_double();
   }
 
   // Conversion from ap_fixed
@@ -417,7 +467,7 @@ public:
   // Conversions from/to other bitwidth
   template<int W2, int E2>
   INLINE NODEBUG
-  ap_float(const ap_float<W2, E2> &other) noexcept {
+  explicit ap_float(const ap_float<W2, E2> &other) noexcept {
 #ifdef __SYNTHESIS__
     __fpga_float_to_float(this, &other, W2, E2, W, E);
 #else
@@ -438,9 +488,9 @@ public:
   // Conversion from integer types
 #define AP_FLOAT_FROM_INT(T)                                                   \
   INLINE NODEBUG                                                               \
-  explicit ap_float(signed T i) noexcept : ap_float(ap_fixed<W,W>(i)) {}       \
+  ap_float(signed T i) noexcept : ap_float(ap_fixed<W,W>(i)) {}                \
   INLINE NODEBUG                                                               \
-  explicit ap_float(unsigned T i) noexcept : ap_float(ap_fixed<W,W>(i)) {}
+  ap_float(unsigned T i) noexcept : ap_float(ap_fixed<W,W>(i)) {}
   AP_FLOAT_FROM_INT(char)
   AP_FLOAT_FROM_INT(short)
   AP_FLOAT_FROM_INT(int)
@@ -657,6 +707,10 @@ public:
   INLINE NODEBUG
   friend ap_float<W0, E0> hls::sqrt(const ap_float<W0, E0> &val) noexcept;
 
+  // Accumulator
+  template<typename T, typename O, typename I>
+  friend class ap_float_acc;
+
 #ifndef __SYNTHESIS__
   // Output stream printing
   template<int W0, int E0>
@@ -818,6 +872,57 @@ ap_float<W, E> operator/(ap_float<W, E> lhs,
   return lhs /= rhs;
 }
 
+// Implicit conversions with native types (when at least one input is ap_float)
+#define AP_FLOAT_COMPARE_WITH_NATIVE(O, T)                                     \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  bool operator O(const ap_float<W, E> &lhs, const T &rhs) noexcept {          \
+    return operator O(lhs, ap_float<W, E>(rhs));                               \
+  }                                                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  bool operator O(const T &lhs, const ap_float<W, E> &rhs) noexcept {          \
+    return operator O(ap_float<W, E>(lhs), rhs);                               \
+  }
+#define AP_FLOAT_BIN_OP_WITH_NATIVE(O, T)                                      \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> operator O(const ap_float<W, E> &lhs, const T &rhs) noexcept {\
+    return operator O(lhs, ap_float<W, E>(rhs));                               \
+  }                                                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> operator O(const T &lhs, const ap_float<W, E> &rhs) noexcept {\
+    return operator O(ap_float<W, E>(lhs), rhs);                               \
+  }
+#define AP_FLOAT_WITH_NATIVE(T)                                                \
+  AP_FLOAT_COMPARE_WITH_NATIVE(==, T)                                          \
+  AP_FLOAT_COMPARE_WITH_NATIVE(!=, T)                                          \
+  AP_FLOAT_COMPARE_WITH_NATIVE(<, T)                                           \
+  AP_FLOAT_COMPARE_WITH_NATIVE(>, T)                                           \
+  AP_FLOAT_COMPARE_WITH_NATIVE(<=, T)                                          \
+  AP_FLOAT_COMPARE_WITH_NATIVE(>=, T)                                          \
+  AP_FLOAT_BIN_OP_WITH_NATIVE(+, T)                                            \
+  AP_FLOAT_BIN_OP_WITH_NATIVE(-, T)                                            \
+  AP_FLOAT_BIN_OP_WITH_NATIVE(*, T)                                            \
+  AP_FLOAT_BIN_OP_WITH_NATIVE(/, T)
+AP_FLOAT_WITH_NATIVE(half)
+AP_FLOAT_WITH_NATIVE(float)
+AP_FLOAT_WITH_NATIVE(double)
+AP_FLOAT_WITH_NATIVE(signed char)
+AP_FLOAT_WITH_NATIVE(signed short)
+AP_FLOAT_WITH_NATIVE(signed int)
+AP_FLOAT_WITH_NATIVE(signed long)
+AP_FLOAT_WITH_NATIVE(signed long long)
+AP_FLOAT_WITH_NATIVE(unsigned char)
+AP_FLOAT_WITH_NATIVE(unsigned short)
+AP_FLOAT_WITH_NATIVE(unsigned int)
+AP_FLOAT_WITH_NATIVE(unsigned long)
+AP_FLOAT_WITH_NATIVE(unsigned long long)
+#undef AP_FLOAT_COMPARE_WITH_NATIVE
+#undef AP_FLOAT_BIN_OP_WITH_NATIVE
+#undef AP_FLOAT_WITH_NATIVE
+
 #ifndef __SYNTHESIS__
 // Output stream printing
 template<int W, int E>
@@ -878,6 +983,59 @@ ap_float<W, E> fma(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs,
   return res;
 }
 
+// Implicit conversions with native types (when at least one input is ap_float)
+#define AP_FLOAT_FMA_WITH_NATIVE(T)                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> fma(const T &lhs, const ap_float<W, E> &rhs,                  \
+                     const ap_float<W, E> &add) noexcept {                     \
+    return fma(ap_float<W, E>(lhs), rhs, add);                                 \
+  }                                                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> fma(const ap_float<W, E> &lhs, const T &rhs,                  \
+                     const ap_float<W, E> &add) noexcept {                     \
+    return fma(lhs, ap_float<W, E>(rhs), add);                                 \
+  }                                                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> fma(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs,     \
+                     const T &add) noexcept {                                  \
+    return fma(lhs, rhs, ap_float<W, E>(add));                                 \
+  }                                                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> fma(const T &lhs, const T &rhs, const ap_float<W, E> &add)    \
+      noexcept {                                                               \
+    return fma(ap_float<W, E>(lhs), ap_float<W, E>(rhs), add);                 \
+  }                                                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> fma(const T &lhs, const ap_float<W, E> &rhs, const T &add)    \
+      noexcept {                                                               \
+    return fma(ap_float<W, E>(lhs), rhs, ap_float<W, E>(add));                 \
+  }                                                                            \
+  template<int W, int E>                                                       \
+  INLINE NODEBUG                                                               \
+  ap_float<W, E> fma(const ap_float<W, E> &lhs, const T &rhs, const T &add)    \
+      noexcept {                                                               \
+    return fma(lhs, ap_float<W, E>(rhs), ap_float<W, E>(add));                 \
+  }
+AP_FLOAT_FMA_WITH_NATIVE(half)
+AP_FLOAT_FMA_WITH_NATIVE(float)
+AP_FLOAT_FMA_WITH_NATIVE(double)
+AP_FLOAT_FMA_WITH_NATIVE(signed char)
+AP_FLOAT_FMA_WITH_NATIVE(signed short)
+AP_FLOAT_FMA_WITH_NATIVE(signed int)
+AP_FLOAT_FMA_WITH_NATIVE(signed long)
+AP_FLOAT_FMA_WITH_NATIVE(signed long long)
+AP_FLOAT_FMA_WITH_NATIVE(unsigned char)
+AP_FLOAT_FMA_WITH_NATIVE(unsigned short)
+AP_FLOAT_FMA_WITH_NATIVE(unsigned int)
+AP_FLOAT_FMA_WITH_NATIVE(unsigned long)
+AP_FLOAT_FMA_WITH_NATIVE(unsigned long long)
+#undef AP_FLOAT_FMA_WITH_NATIVE
+
 // Square Root
 template<int W, int E>
 INLINE NODEBUG
@@ -900,12 +1058,15 @@ ap_float<W, E> sqrt(const ap_float<W, E> &val) noexcept {
 #endif
   return res;
 }
-} // namespace hls
 
-// Shorthand for native type equivalents
-using ap_float_half = ap_float<16, 5>;
-using ap_float_single = ap_float<32, 8>;
-using ap_float_double = ap_float<64, 11>;
+// Absolute value
+template<int W, int E>
+INLINE NODEBUG
+ap_float<W, E> abs(ap_float<W, E> val) noexcept {
+  val.sign_ref() = 0;
+  return val;
+}
+} // namespace hls
 
 namespace std {
 template<int W, int E>
@@ -989,5 +1150,84 @@ struct numeric_limits<ap_float<W, E>> {
   }
 };
 } // namespace std
+
+/** Arbitrary Precision Floating-Point Class
+ *   - T: ap_float<W, E> used for input values as well as output/return value
+ *   - O: ap_fixed<OW, OI> used for internal accumulator as well as output for fixed-to-float conversion
+ *   - I: ap_fixed<IW, II> used for input float-to-fixed conversion
+ */
+template<typename T, typename O, typename I = O>
+class ap_float_acc {
+  T accumulate(const T &v, bool last);
+};
+
+template<int W, int E, int OW, int OI, int IW, int II>
+class ap_float_acc<ap_float<W, E>, ap_fixed<OW, OI>, ap_fixed<IW, II>> {
+  static_assert(IW - II == OW - OI, "ap_float_acc output LSB must be aligned "
+                                    "with the input LSB");
+  static_assert(OI >= II, "ap_float_acc output MSB must be greater or equal to "
+                          "the input MSB");
+  static_assert(OI <= II + 54, "ap_float_acc output MSB must be no greater "
+                               "than the input MSB + 54");
+
+#ifdef __SYNTHESIS__
+  ap_fixed<OW, OI> sum;
+#else
+  xil_fpo_accum_state *state = nullptr;
+  bool last;
+#endif
+
+public:
+#ifdef __SYNTHESIS__
+  ap_float_acc() = default;
+  ~ap_float_acc() = default;
+#else
+  ap_float_acc() {
+    state = xip_fpo_accum_create_state(E, W-E, OI-1, II-1, OI-OW);
+
+    last = true;
+    xip_fpo_accum_reset_state(state);
+  }
+
+  ~ap_float_acc() {
+    assert(last && "ap_float_acc destroyed before last accumulation");
+
+    xip_fpo_accum_destroy_state(state);
+    state = nullptr;
+  }
+#endif
+
+  // No copy/assignment allowed
+  ap_float_acc(ap_float_acc &&) = delete;
+  ap_float_acc(const ap_float_acc &) = delete;
+  ap_float_acc& operator=(ap_float_acc &&) = delete;
+  ap_float_acc& operator=(const ap_float_acc &) = delete;
+
+  // Public API
+  INLINE NODEBUG
+  ap_float<W, E> accumulate(const ap_float<W, E> &val, bool last) noexcept {
+    ap_float<W, E> res;
+#ifdef __SYNTHESIS__
+    __fpga_float_accumulate(&res, &sum, &val, last, W, E, OW, OI, II);
+#else
+    xip_fpo_t xval;
+    xip_fpo_t xres;
+    val.init_xip_fpo_t(xval);
+    res.init_xip_fpo_t(xres);
+
+    val.to_xip_fpo_t(xval);
+    xip_fpo_accum_sample(xres, xval, /*subtract=*/false, state);
+    res.from_xip_fpo_t(xres);
+
+    val.fini_xip_fpo_t(xval);
+    res.fini_xip_fpo_t(xres);
+
+    this->last = last;
+    if (last)
+      xip_fpo_accum_reset_state(state);
+#endif
+    return res;
+  }
+};
 
 #endif

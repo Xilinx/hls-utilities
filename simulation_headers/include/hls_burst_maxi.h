@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 #ifndef X_HLS_BURST_MAXI_SIM_H
 #define X_HLS_BURST_MAXI_SIM_H
 
@@ -44,6 +28,34 @@ struct MAXIAccessRecord {
   std::list<std::pair<size_t, unsigned>> ReadQ;
   std::list<std::pair<size_t, unsigned>> WriteQ;
   std::list<std::pair<size_t, unsigned>> WriteRespQ;
+  ~MAXIAccessRecord() {
+    if (!WriteRespQ.empty()) {
+#ifdef ALLOW_INSUFFICIENT_MAXI_RESPONSES
+      std::cerr << "Warning: Insufficient burst_maxi::write_response calls. It may lead to potential dead lock if the number of write_response calls doesn't match the number of write_request calls." << std::endl;
+#else
+      std::cerr << "Error: Insufficient burst_maxi::write_response calls. It may lead to potential dead lock if the number of write_response calls doesn't match the number of write_request calls." << std::endl;
+      abort();
+#endif
+    }
+
+    if (!ReadQ.empty()) {
+#ifdef ALLOW_INSUFFICIENT_MAXI_READS
+      std::cerr << "Warning: Insufficient burst_maxi::read calls. It may lead to potential dead lock if the number of read calls doesn't match the number of data fetched by read_request." << std::endl;
+#else
+      std::cerr << "Error: Insufficient burst_maxi::read calls. It may lead to potential dead lock if the number of read calls doesn't match the number of data fetched by read_request." << std::endl;
+      abort();
+#endif
+    }
+
+    if (!WriteQ.empty()) {
+#ifdef ALLOW_INSUFFICIENT_MAXI_WRITES
+      std::cerr << "Warning: Insufficient burst_maxi::write calls. It may lead to potential dead lock if the number of write calls doesn't match the number of data reserved by write_request." << std::endl;
+#else
+      std::cerr << "Error: Insufficient burst_maxi::write calls. It may lead to potential dead lock if the number of write calls doesn't match the number of data reserved by write_request." << std::endl;
+      abort();
+#endif
+    }
+  }
 };
 
 template<typename T>
@@ -131,8 +143,8 @@ private:
     return a <= b ? a + a_len > b : b + b_len > a;
   }
   static std::map<void *, MAXIAccessRecord> &getMAXIPointer2AccessRecordMap() {
-    static std::map<void *, MAXIAccessRecord> *Map = new std::map<void *, MAXIAccessRecord>();
-    return *Map;
+    static std::map<void *, MAXIAccessRecord> Map;
+    return Map;
   }
 };
 

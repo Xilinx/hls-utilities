@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 /*
  * This file contains the definition of the data types for AXI streaming.
@@ -47,15 +31,18 @@ struct ap_ufixed;
 
 namespace hls {
 
-template <typename T> constexpr std::size_t bitwidth = sizeof(T) * CHAR_BIT;
-#if defined (__llvm__) && !defined(__SYNTHESIS__)
-template <> constexpr static std::size_t bitwidth<void> = 1 * CHAR_BIT;
-#else
-template <> constexpr std::size_t bitwidth<void> = 1 * CHAR_BIT;
-#endif
+/// add anonymous namespace to ensure explicit specialization is internal,
+/// otherwise we will have link issue after clang 8.0
+namespace {
+template <typename T>
+constexpr std::size_t bitwidth = sizeof(T) * CHAR_BIT;
+template <>
+constexpr std::size_t bitwidth<void> = 1 * CHAR_BIT;
 
-template <std::size_t W> constexpr std::size_t bitwidth<ap_int<W>> = W;
-template <std::size_t W> constexpr std::size_t bitwidth<ap_uint<W>> = W;
+template <std::size_t W>
+constexpr std::size_t bitwidth<ap_int<W>> = W;
+template <std::size_t W>
+constexpr std::size_t bitwidth<ap_uint<W>> = W;
 template <int _AP_W, int _AP_I, ap_q_mode _AP_Q, ap_o_mode _AP_O, int _AP_N>
 constexpr std::size_t bitwidth<ap_fixed<_AP_W, _AP_I, _AP_Q, _AP_O, _AP_N>> =
     _AP_W;
@@ -65,11 +52,9 @@ constexpr std::size_t bitwidth<ap_ufixed<_AP_W, _AP_I, _AP_Q, _AP_O, _AP_N>> =
 
 template <typename T>
 constexpr std::size_t bytewidth = (bitwidth<T> + CHAR_BIT - 1) / CHAR_BIT;
-#if defined (__llvm__) && !defined(__SYNTHESIS__)
-template <> constexpr static std::size_t bytewidth<void> = 1;
-#else
-template <> constexpr std::size_t bytewidth<void> = 1;
-#endif
+template <>
+constexpr std::size_t bytewidth<void> = 1;
+}  // namespace
 
 struct axis_disabled_signal {};
 
@@ -326,6 +311,7 @@ class stream<axis<T, WUser, WId, WDest, EnableSignals, StrictEnablement>>
       __STREAM_T__;
 
 public:
+  using value_type = __STREAM_T__;
   /// Constructors
   INLINE NODEBUG stream() {}
 

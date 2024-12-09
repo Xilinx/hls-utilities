@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef X_HLS_DDS_H
 #define X_HLS_DDS_H
@@ -172,10 +156,11 @@ struct in_config_pinc_poff{
 static const unsigned __HLS_DDS_CONFIG_N_ = (CONFIG_T::Phase_Increment%2 + CONFIG_T::Phase_Offset%2);
 static const unsigned input_axi_width = (CONFIG_T::Phase_Width%8) ? (CONFIG_T::Phase_Width/8+1)*8 : CONFIG_T::Phase_Width;    
 static const unsigned output_axi_width = (CONFIG_T::Output_Width%8) ? (CONFIG_T::Output_Width/8+1)*8 : CONFIG_T::Output_Width;    
+static const unsigned out_phase_array_width = __HLS_DDS_CONFIG_N_ ? input_axi_width * __HLS_DDS_CONFIG_N_ : 1;
 
 typedef ap_ufixed<input_axi_width, input_axi_width - CONFIG_T::phase_fractional_bits> out_phase_t;
 // due to there's no data_pack for scout_hls, need to pack 'data' manually.
-typedef ap_int<input_axi_width * __HLS_DDS_CONFIG_N_> out_phase_array_t;
+typedef ap_int<out_phase_array_width> out_phase_array_t;
 
     out_phase_array_t data;
     in_config_pinc_poff() { }

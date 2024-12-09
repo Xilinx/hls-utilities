@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 #ifndef __AP_FIXED_BASE_H__
 #define __AP_FIXED_BASE_H__
@@ -124,6 +108,8 @@ struct _ap_fixed_factory<_AP_W2, _AP_I2, false> {
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
 struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
+ static_assert(_AP_W > 0, "ap_fixed_base bitwidth must be positive");
+
  public:
   typedef _AP_ROOT_TYPE<_AP_W, _AP_S> Base;
   static const int width = _AP_W;
@@ -838,9 +824,8 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
         Base::V = isneg ? -1 : 0;
       }
       if (_AP_Q != AP_TRN && !(_AP_Q == AP_TRN_ZERO && !_AP_S2)) {
-        bool qbit = _AP_ROOT_op_get_bit(op.V, F2 - _AP_F - 1);
         // bit after LSB.
-        bool qb = (F2 - _AP_F > _AP_W2) ? _AP_S2 && signbit : qbit;
+        bool qb = (F2 - _AP_F > _AP_W2) ? _AP_S2 && signbit : _AP_ROOT_op_get_bit(op.V, F2 - _AP_F - 1);
         enum { hi = ((F2 - _AP_F - 2) < _AP_W2) ? (F2 - _AP_F - 2) : (_AP_W2 - 1) };
         // bits after qb.
         bool r = (F2 > _AP_F + 1) ? (_AP_ROOT_op_get_range(op.V, 0, hi) != 0) : false;
@@ -1184,7 +1169,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
     if (_AP_ctype_op_get_bit(m, HALF_MAN + 1)) {
       e += 1;
     }
-    // set sign and exponent
+    // set sign and exponent                          
     m = _AP_ctype_op_set_bit(m, BITS - 1, s);
     m = _AP_ctype_op_set_range(m, HALF_MAN, HALF_MAN + HALF_EXP - 1, e);
     // cast to fp
@@ -1250,11 +1235,11 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
     if (_AP_W <= 32) {
       ap_int_base<32, false> t(-1ULL);
       t.range(_AP_W - 1, 0) = this->range(0, _AP_W - 1);
-      return __builtin_ctz(t.V);
+      return t.V == 0 ?  _AP_W : __builtin_ctz(t.V);
     } else if (_AP_W <= 64) {
       ap_int_base<64, false> t(-1ULL);
       t.range(_AP_W - 1, 0) = this->range(0, _AP_W - 1);
-      return __builtin_ctzll(t.V);
+      return t.V == 0 ?  _AP_W : __builtin_ctzll(t.V);
     } else {
       enum {__N = (_AP_W + 63) / 64};
       int NZeros = 0;
@@ -1263,13 +1248,13 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
       for (i = 0; i < __N - 1; ++i) {
         ap_int_base<64, false> t;
         t.range(0, 63) = this->range(_AP_W - i * 64 - 64, _AP_W - i * 64 - 1);
-        NZeros += hitNonZero ? 0 : __builtin_clzll(t.V);
+        NZeros += hitNonZero ? 0 : (t.V == 0 ? 64 : __builtin_clzll(t.V));
         hitNonZero |= (t != 0);
       }
       if (!hitNonZero) {
         ap_int_base<64, false> t(-1ULL);
         t.range(63 - (_AP_W - 1) % 64, 63) = this->range(0, (_AP_W - 1) % 64);
-        NZeros += __builtin_clzll(t.V);
+        NZeros += t.V == 0 ? _AP_W % 64 : __builtin_clzll(t.V); 
       }
       return NZeros;
     }

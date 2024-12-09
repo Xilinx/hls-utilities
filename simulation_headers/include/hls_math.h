@@ -1,23 +1,7 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//  
-// http://www.apache.org/licenses/LICENSE-2.0
-//  
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-
+// 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
 
 #ifndef _X_HLSTMP_MATH__
@@ -25,6 +9,18 @@
 
 #ifndef __cplusplus
 #error "hls_math.h requires C++ and is not support in C compilation."
+#endif
+
+#if __cplusplus >= 201402L
+# define DEPRECATED_MSG(msg) [[deprecated(msg)]]
+#else
+#if defined(__GNUC__) || defined(__clang__)
+# define DEPRECATED_MSG(msg)  __attribute__((__deprecated__(msg)))
+#elif defined(_MSC_VER)
+# define DEPRECATED_MSG(msg) __declspec(deprecated(msg))
+#else
+# define DEPRECATED_MSG(msg)
+#endif
 #endif
 
 #include <cmath>
@@ -951,7 +947,9 @@ namespace hls {
 
   double tgamma_p_reduce(double);
   float  tgamma_p_reduce(float);
+  DEPRECATED_MSG("tgammaf_p_reduce will be removed in future release. Please use tgamma_p_reducef instead.")
   float  tgammaf_p_reduce(float);
+  float  tgamma_p_reducef(float);
 
   // fmod
   double fmod(double, double);
