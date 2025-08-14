@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -67,10 +67,10 @@ typedef unsigned __int64 uint64_t;
 // FIXME eventually, this should have nothing to do with half.
 #include "hls_half.h"
 
-#ifndef INLINE
-#define INLINE inline
+#ifndef AP_INLINE
+#define AP_INLINE inline
 // Enable to debug ap_int/ap_fixed
-// #define INLINE  __attribute__((weak))
+// #define AP_INLINE  __attribute__((weak))
 #endif
 
 // NOTE: The following support functions use the _32/_64 extensions instead of
@@ -78,12 +78,12 @@ typedef unsigned __int64 uint64_t;
 // ambiguity.
 namespace AESL_std {
 template <class DataType>
-HLS_CONSTEXPR DataType INLINE min(DataType a, DataType b) {
+HLS_CONSTEXPR DataType AP_INLINE min(DataType a, DataType b) {
   return (a >= b) ? b : a;
 }
 
 template <class DataType>
-HLS_CONSTEXPR DataType INLINE max(DataType a, DataType b) {
+HLS_CONSTEXPR DataType AP_INLINE max(DataType a, DataType b) {
   return (a >= b) ? a : b;
 }
 } // namespace AESL_std
@@ -101,22 +101,22 @@ HLS_CONSTEXPR DataType INLINE max(DataType a, DataType b) {
 
 namespace ap_private_ops {
 /// Hi_32 - This function returns the high 32 bits of a 64 bit value.
-HLS_CONSTEXPR static INLINE uint32_t Hi_32(uint64_t Value) {
+HLS_CONSTEXPR static AP_INLINE uint32_t Hi_32(uint64_t Value) {
   return static_cast<uint32_t>(Value >> 32);
 }
 
 /// Lo_32 - This function returns the low 32 bits of a 64 bit value.
-HLS_CONSTEXPR static INLINE uint32_t Lo_32(uint64_t Value) {
+HLS_CONSTEXPR static AP_INLINE uint32_t Lo_32(uint64_t Value) {
   return static_cast<uint32_t>(Value);
 }
 
 template <int _AP_W>
-HLS_CONSTEXPR INLINE bool isNegative(const ap_private<_AP_W, false>& a) {
+HLS_CONSTEXPR AP_INLINE bool isNegative(const ap_private<_AP_W, false>& a) {
   return false;
 }
 
 template <int _AP_W>
-HLS_CONSTEXPR INLINE bool isNegative(const ap_private<_AP_W, true>& a) {
+HLS_CONSTEXPR AP_INLINE bool isNegative(const ap_private<_AP_W, true>& a) {
   enum {
     APINT_BITS_PER_WORD = 64,
     _AP_N = (_AP_W + APINT_BITS_PER_WORD - 1) / APINT_BITS_PER_WORD
@@ -130,7 +130,7 @@ HLS_CONSTEXPR INLINE bool isNegative(const ap_private<_AP_W, true>& a) {
 /// counting the number of zeros from the most significant bit to the first one
 /// bit.  Ex. CountLeadingZeros_32(0x00F000FF) == 8.
 /// Returns 32 if the word is zero.
-HLS_CONSTEXPR static INLINE unsigned CountLeadingZeros_32(uint32_t Value) {
+HLS_CONSTEXPR static AP_INLINE unsigned CountLeadingZeros_32(uint32_t Value) {
   unsigned Count = 0; // result
 #if __GNUC__ >= 4
 // PowerPC is defined for __builtin_clz(0)
@@ -158,7 +158,7 @@ HLS_CONSTEXPR static INLINE unsigned CountLeadingZeros_32(uint32_t Value) {
 /// of counting the number of zeros from the most significant bit to the first
 /// one bit (64 bit edition.)
 /// Returns 64 if the word is zero.
-HLS_CONSTEXPR static INLINE unsigned CountLeadingZeros_64(uint64_t Value) {
+HLS_CONSTEXPR static AP_INLINE unsigned CountLeadingZeros_64(uint64_t Value) {
   unsigned Count = 0; // result
 #if __GNUC__ >= 4
 // PowerPC is defined for __builtin_clzll(0)
@@ -202,7 +202,7 @@ HLS_CONSTEXPR static INLINE unsigned CountLeadingZeros_64(uint64_t Value) {
 /// of counting the number of zeros from the least significant bit to the first
 /// one bit (64 bit edition.)
 /// Returns 64 if the word is zero.
-HLS_CONSTEXPR static INLINE unsigned CountTrailingZeros_64(uint64_t Value) {
+HLS_CONSTEXPR static AP_INLINE unsigned CountTrailingZeros_64(uint64_t Value) {
 #if __GNUC__ >= 4
   return (Value != 0) ? __builtin_ctzll(Value) : 64;
 #else
@@ -217,7 +217,7 @@ HLS_CONSTEXPR static INLINE unsigned CountTrailingZeros_64(uint64_t Value) {
 
 /// CountPopulation_64 - this function counts the number of set bits in a value,
 /// (64 bit edition.)
-HLS_CONSTEXPR static INLINE unsigned CountPopulation_64(uint64_t Value) {
+HLS_CONSTEXPR static AP_INLINE unsigned CountPopulation_64(uint64_t Value) {
 #if __GNUC__ >= 4
   return __builtin_popcountll(Value);
 #else
@@ -228,7 +228,7 @@ HLS_CONSTEXPR static INLINE unsigned CountPopulation_64(uint64_t Value) {
 #endif
 }
 
-HLS_CONSTEXPR static INLINE uint32_t countLeadingOnes_64(uint64_t __V, uint32_t skip) {
+HLS_CONSTEXPR static AP_INLINE uint32_t countLeadingOnes_64(uint64_t __V, uint32_t skip) {
   uint32_t Count = 0;
   if (skip) (__V) <<= (skip);
   while (__V && (__V & (1ULL << 63))) {
@@ -238,7 +238,7 @@ HLS_CONSTEXPR static INLINE uint32_t countLeadingOnes_64(uint64_t __V, uint32_t 
   return Count;
 }
 
-static INLINE std::string oct2Bin(char oct) {
+static AP_INLINE std::string oct2Bin(char oct) {
   switch (oct) {
     case '\0': {
       return "";
@@ -275,7 +275,7 @@ static INLINE std::string oct2Bin(char oct) {
   return "";
 }
 
-static INLINE std::string hex2Bin(char hex) {
+static AP_INLINE std::string hex2Bin(char hex) {
   switch (hex) {
     case '\0': {
       return "";
@@ -342,7 +342,7 @@ static INLINE std::string hex2Bin(char hex) {
   return "";
 }
 
-static INLINE uint32_t decode_digit(char cdigit, int radix) {
+static AP_INLINE uint32_t decode_digit(char cdigit, int radix) {
   uint32_t digit = 0;
   if (radix == 16) {
 #define isxdigit(c)                                            \
@@ -369,7 +369,7 @@ static INLINE uint32_t decode_digit(char cdigit, int radix) {
 }
 
 // Determine the radix of "val".
-static INLINE std::string parseString(const std::string& input, unsigned char& radix) {
+static AP_INLINE std::string parseString(const std::string& input, unsigned char& radix) {
   size_t len = input.length();
   if (len == 0) {
     if (radix == 0) radix = 10;
@@ -514,7 +514,7 @@ static INLINE std::string parseString(const std::string& input, unsigned char& r
 /// is 1 if "borrowing" exhausted the digits in x, or 0 if x was not exhausted.
 /// In other words, if y > x then this function returns 1, otherwise 0.
 /// @returns the borrow out of the subtraction
-HLS_CONSTEXPR static INLINE bool sub_1(uint64_t x[], uint32_t len, uint64_t y) {
+HLS_CONSTEXPR static AP_INLINE bool sub_1(uint64_t x[], uint32_t len, uint64_t y) {
   for (uint32_t i = 0; i < len; ++i) {
     uint64_t __X = x[i];
     x[i] -= y;
@@ -532,7 +532,7 @@ HLS_CONSTEXPR static INLINE bool sub_1(uint64_t x[], uint32_t len, uint64_t y) {
 /// "digit" integer array,  x[]. x[] is modified to reflect the addition and
 /// 1 is returned if there is a carry out, otherwise 0 is returned.
 /// @returns the carry of the addition.
-HLS_CONSTEXPR static INLINE bool add_1(uint64_t dest[], uint64_t x[], uint32_t len,
+HLS_CONSTEXPR static AP_INLINE bool add_1(uint64_t dest[], uint64_t x[], uint32_t len,
                          uint64_t y) {
   for (uint32_t i = 0; i < len; ++i) {
     dest[i] = y + x[i];
@@ -550,7 +550,7 @@ HLS_CONSTEXPR static INLINE bool add_1(uint64_t dest[], uint64_t x[], uint32_t l
 /// places the result in dest.
 /// @returns the carry out from the addition
 /// @brief General addition of 64-bit integer arrays
-HLS_CONSTEXPR static INLINE bool add(uint64_t* dest, const uint64_t* x, const uint64_t* y,
+HLS_CONSTEXPR static AP_INLINE bool add(uint64_t* dest, const uint64_t* x, const uint64_t* y,
                        uint32_t destlen, uint32_t xlen, uint32_t ylen,
                        bool xsigned, bool ysigned) {
   bool carry = false;
@@ -582,7 +582,7 @@ HLS_CONSTEXPR static INLINE bool add(uint64_t* dest, const uint64_t* x, const ui
 
 /// @returns returns the borrow out.
 /// @brief Generalized subtraction of 64-bit integer arrays.
-HLS_CONSTEXPR static INLINE bool sub(uint64_t* dest, const uint64_t* x, const uint64_t* y,
+HLS_CONSTEXPR static AP_INLINE bool sub(uint64_t* dest, const uint64_t* x, const uint64_t* y,
                        uint32_t destlen, uint32_t xlen, uint32_t ylen,
                        bool xsigned, bool ysigned) {
   bool borrow = false;
@@ -619,7 +619,7 @@ HLS_CONSTEXPR static INLINE bool sub(uint64_t* dest, const uint64_t* x, const ui
 /// into dest.
 /// @returns the carry out of the multiplication.
 /// @brief Multiply a multi-digit ap_private by a single digit (64-bit) integer.
-HLS_CONSTEXPR static INLINE uint64_t mul_1(uint64_t dest[], const uint64_t x[], uint32_t len,
+HLS_CONSTEXPR static AP_INLINE uint64_t mul_1(uint64_t dest[], const uint64_t x[], uint32_t len,
                              uint64_t y) {
   // Split y into high 32-bit part (hy)  and low 32-bit part (ly)
   uint64_t ly = y & 0xffffffffULL, hy = (y) >> 32;
@@ -658,7 +658,7 @@ HLS_CONSTEXPR static INLINE uint64_t mul_1(uint64_t dest[], const uint64_t x[], 
 /// do a full precision computation. If it is not, then only the low-order words
 /// are returned.
 /// @brief Generalized multiplicate of integer arrays.
-static INLINE void mul(uint64_t dest[], const uint64_t x[], uint32_t xlen,
+static AP_INLINE void mul(uint64_t dest[], const uint64_t x[], uint32_t xlen,
                        const uint64_t y[], uint32_t ylen, uint32_t destlen) {
   assert(xlen > 0);
   assert(ylen > 0);
@@ -695,7 +695,7 @@ static INLINE void mul(uint64_t dest[], const uint64_t x[], uint32_t xlen,
 /// from "Art of Computer Programming, Volume 2", section 4.3.1, p. 272. The
 /// variables here have the same names as in the algorithm. Comments explain
 /// the algorithm and any deviation from it.
-static INLINE void KnuthDiv(uint32_t* u, uint32_t* v, uint32_t* q, uint32_t* r,
+static AP_INLINE void KnuthDiv(uint32_t* u, uint32_t* v, uint32_t* q, uint32_t* r,
                             uint32_t m, uint32_t n) {
   assert(u && "Must provide dividend");
   assert(v && "Must provide divisor");
@@ -1202,7 +1202,7 @@ void divide(const ap_private<_AP_W, _AP_S>& LHS, uint32_t lhsWords,
 
 /// @brief Logical right-shift function.
 template <int _AP_W, bool _AP_S, bool _AP_C>
-HLS_CONSTEXPR INLINE ap_private<_AP_W, _AP_S, _AP_C> lshr(
+HLS_CONSTEXPR AP_INLINE ap_private<_AP_W, _AP_S, _AP_C> lshr(
     const ap_private<_AP_W, _AP_S, _AP_C>& LHS, uint32_t shiftAmt) {
   return LHS.lshr(shiftAmt);
 }
@@ -1210,7 +1210,7 @@ HLS_CONSTEXPR INLINE ap_private<_AP_W, _AP_S, _AP_C> lshr(
 /// Left-shift the ap_private by shiftAmt.
 /// @brief Left-shift function.
 template <int _AP_W, bool _AP_S, bool _AP_C>
-HLS_CONSTEXPR INLINE ap_private<_AP_W, _AP_S, _AP_C> shl(
+HLS_CONSTEXPR AP_INLINE ap_private<_AP_W, _AP_S, _AP_C> shl(
     const ap_private<_AP_W, _AP_S, _AP_C>& LHS, uint32_t shiftAmt) {
   return LHS.shl(shiftAmt);
 }
@@ -1401,11 +1401,11 @@ class ap_private<_AP_W, _AP_S, true> {
   HLS_CONSTEXPR void set_canary() {}
 #endif
 
-  HLS_CONSTEXPR INLINE ValType& get_VAL(void) { return VAL; }
-  HLS_CONSTEXPR INLINE ValType get_VAL(void) const { return VAL; }
-  INLINE ValType get_VAL(void) const volatile { return VAL; }
+  HLS_CONSTEXPR AP_INLINE ValType& get_VAL(void) { return VAL; }
+  HLS_CONSTEXPR AP_INLINE ValType get_VAL(void) const { return VAL; }
+  AP_INLINE ValType get_VAL(void) const volatile { return VAL; }
 
-  HLS_CONSTEXPR INLINE ValType get_cleared_VAL(void)
+  HLS_CONSTEXPR AP_INLINE ValType get_cleared_VAL(void)
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -1430,7 +1430,7 @@ class ap_private<_AP_W, _AP_S, true> {
 #endif
   }
 
-  HLS_CONSTEXPR INLINE ValType get_cleared_VAL(void) const
+  HLS_CONSTEXPR AP_INLINE ValType get_cleared_VAL(void) const
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -1455,22 +1455,22 @@ class ap_private<_AP_W, _AP_S, true> {
 #endif
   }
 
-  INLINE void set_VAL(uint64_t value) { VAL = (ValType)value; }
-  HLS_CONSTEXPR INLINE ValType& get_pVal(int i) { return VAL; }
-  HLS_CONSTEXPR INLINE ValType get_pVal(int i) const { return VAL; }
-  INLINE const uint64_t* get_pVal() const {
+  AP_INLINE void set_VAL(uint64_t value) { VAL = (ValType)value; }
+  HLS_CONSTEXPR AP_INLINE ValType& get_pVal(int i) { return VAL; }
+  HLS_CONSTEXPR AP_INLINE ValType get_pVal(int i) const { return VAL; }
+  AP_INLINE const uint64_t* get_pVal() const {
     assert(0 && "invalid usage");
     return 0;
   }
   ///can't be constexpr because of volatile
-  INLINE ValType get_pVal(int i) const volatile { return VAL; }
-  INLINE uint64_t* get_pVal() const volatile {
+  AP_INLINE ValType get_pVal(int i) const volatile { return VAL; }
+  AP_INLINE uint64_t* get_pVal() const volatile {
     assert(0 && "invalid usage");
     return 0;
   }
-  INLINE void set_pVal(int i, uint64_t value) { VAL = (ValType)value; }
+  AP_INLINE void set_pVal(int i, uint64_t value) { VAL = (ValType)value; }
 
-  HLS_CONSTEXPR INLINE uint32_t getBitWidth() const { return BitWidth; }
+  HLS_CONSTEXPR AP_INLINE uint32_t getBitWidth() const { return BitWidth; }
 
   template <int _AP_W1, bool _AP_S1>
   HLS_CONSTEXPR ap_private<_AP_W, _AP_S>& operator=(const ap_private<_AP_W1, _AP_S1>& RHS) {
@@ -1514,13 +1514,13 @@ class ap_private<_AP_W, _AP_S, true> {
   }
   //constexpr stretch
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE ap_private& operator=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private& operator=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     *this = ap_private<_AP_W2, false>(op2);
     return *this;
   }
 
 #define ASSIGN_OP_FROM_INT(C_TYPE)               \
-  INLINE ap_private& operator=(const C_TYPE v) { \
+  AP_INLINE ap_private& operator=(const C_TYPE v) { \
     set_canary();                                \
     this->VAL = (ValType)v;                      \
     clearUnusedBits();                           \
@@ -1547,23 +1547,23 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
 #undef ASSIGN_OP_FROM_INT
 
   // XXX This is a must to prevent pointer being converted to bool.
-  INLINE ap_private& operator=(const char* s) {
+  AP_INLINE ap_private& operator=(const char* s) {
     ap_private tmp(s); // XXX direct-initialization, as ctor is explicit.
     operator=(tmp);
     return *this;
   }
 
  private:
-  HLS_CONSTEXPR explicit INLINE ap_private(uint64_t* val) : VAL(val[0]) {
+  HLS_CONSTEXPR explicit AP_INLINE ap_private(uint64_t* val) : VAL(val[0]) {
     set_canary();
     clearUnusedBits();
     check_canary();
   }
 
-  HLS_CONSTEXPR INLINE bool isSingleWord() const { return true; }
+  HLS_CONSTEXPR AP_INLINE bool isSingleWord() const { return true; }
 
  public:
-  INLINE void fromString(const char* strStart, uint32_t slen, uint8_t radix) {
+  AP_INLINE void fromString(const char* strStart, uint32_t slen, uint8_t radix) {
     bool isNeg = strStart[0] == '-';
     if (isNeg) {
       strStart++;
@@ -1656,21 +1656,21 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
   }
 
  private:
-  INLINE ap_private(const std::string& val, uint8_t radix = 2) : VAL(0) {
+  AP_INLINE ap_private(const std::string& val, uint8_t radix = 2) : VAL(0) {
     assert(!val.empty() && "String empty?");
     set_canary();
     fromString(val.c_str(), val.size(), radix);
     check_canary();
   }
 
-  INLINE ap_private(const char strStart[], uint32_t slen, uint8_t radix)
+  AP_INLINE ap_private(const char strStart[], uint32_t slen, uint8_t radix)
       : VAL(0) {
     set_canary();
     fromString(strStart, slen, radix);
     check_canary();
   }
 
-  INLINE ap_private(uint32_t numWords, const uint64_t bigVal[])
+  AP_INLINE ap_private(uint32_t numWords, const uint64_t bigVal[])
       : VAL(bigVal[0]) {
     set_canary();
     clearUnusedBits();
@@ -1678,14 +1678,14 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
   }
 
  public:
-  INLINE ap_private() {
+  AP_INLINE ap_private() {
     set_canary();
     clearUnusedBits();
     check_canary();
   }
 
 #define CTOR(TYPE)                              \
-  INLINE ap_private(TYPE v) : VAL((ValType)v) { \
+  AP_INLINE ap_private(TYPE v) : VAL((ValType)v) { \
     set_canary();                               \
     clearUnusedBits();                          \
     check_canary();                             \
@@ -1708,7 +1708,7 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
 #undef CTOR
 
   template <int _AP_W1, bool _AP_S1, bool _AP_OPT>
-  HLS_CONSTEXPR INLINE ap_private(const ap_private<_AP_W1, _AP_S1, _AP_OPT>& that)
+  HLS_CONSTEXPR AP_INLINE ap_private(const ap_private<_AP_W1, _AP_S1, _AP_OPT>& that)
       : VAL((ValType)that.get_VAL()) {
     set_canary();
     clearUnusedBits();
@@ -1716,14 +1716,14 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
   }
 
   template <int _AP_W1, bool _AP_S1, bool _AP_OPT>
-  HLS_CONSTEXPR INLINE ap_private(const volatile ap_private<_AP_W1, _AP_S1, _AP_OPT>& that)
+  HLS_CONSTEXPR AP_INLINE ap_private(const volatile ap_private<_AP_W1, _AP_S1, _AP_OPT>& that)
       : VAL((ValType)that.get_VAL()) {
     set_canary();
     clearUnusedBits();
     check_canary();
   }
 
-  explicit INLINE ap_private(const char* val) {
+  explicit AP_INLINE ap_private(const char* val) {
     set_canary();
     unsigned char radix = 10;
     std::string str = ap_private_ops::parseString(val, radix); // will set radix.
@@ -1736,7 +1736,7 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
     check_canary();
   }
 
-  INLINE ap_private(const char* val, signed char rd) {
+  AP_INLINE ap_private(const char* val, signed char rd) {
     set_canary();
     unsigned char radix = rd;
     std::string str = ap_private_ops::parseString(val, radix); // will set radix.
@@ -1749,38 +1749,38 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
     check_canary();
   }
 
-  INLINE ~ap_private() = default;
-  //INLINE ~ap_private() { check_canary(); }
+  AP_INLINE ~ap_private() = default;
+  //AP_INLINE ~ap_private() { check_canary(); }
 
-  HLS_CONSTEXPR INLINE bool isNegative() const {
+  HLS_CONSTEXPR AP_INLINE bool isNegative() const {
     //static const uint64_t sign_mask = 1ULL << (_AP_W - 1);     //double check
     const uint64_t sign_mask = 1ULL << (_AP_W - 1);
     return _AP_S && (sign_mask & VAL);
   }
 
-  HLS_CONSTEXPR INLINE bool isPositive() const { return !isNegative(); }
+  HLS_CONSTEXPR AP_INLINE bool isPositive() const { return !isNegative(); }
 
-  HLS_CONSTEXPR INLINE bool isStrictlyPositive() const { return !isNegative() && VAL != 0; }
+  HLS_CONSTEXPR AP_INLINE bool isStrictlyPositive() const { return !isNegative() && VAL != 0; }
 
-  HLS_CONSTEXPR INLINE bool isAllOnesValue() const { return (mask & VAL) == mask; }
+  HLS_CONSTEXPR AP_INLINE bool isAllOnesValue() const { return (mask & VAL) == mask; }
 
-  HLS_CONSTEXPR INLINE bool operator==(const ap_private<_AP_W, _AP_S>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool operator==(const ap_private<_AP_W, _AP_S>& RHS) const {
     return get_cleared_VAL() == RHS.get_cleared_VAL();
   }
-  HLS_CONSTEXPR INLINE bool operator==(const ap_private<_AP_W, !_AP_S>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool operator==(const ap_private<_AP_W, !_AP_S>& RHS) const {
     return (uint64_t)get_cleared_VAL() == (uint64_t)RHS.get_cleared_VAL();
   }
 
-  HLS_CONSTEXPR INLINE bool operator==(uint64_t Val) const {
+  HLS_CONSTEXPR AP_INLINE bool operator==(uint64_t Val) const {
     return ((uint64_t)get_cleared_VAL() == Val);
   }
-  HLS_CONSTEXPR INLINE bool operator!=(uint64_t Val) const {
+  HLS_CONSTEXPR AP_INLINE bool operator!=(uint64_t Val) const {
     return ((uint64_t)get_cleared_VAL() != Val); 
   }
-  HLS_CONSTEXPR INLINE bool operator!=(const ap_private<_AP_W, _AP_S>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool operator!=(const ap_private<_AP_W, _AP_S>& RHS) const {
     return get_cleared_VAL() != RHS.get_cleared_VAL();
   }
-  HLS_CONSTEXPR INLINE bool operator!=(const ap_private<_AP_W, !_AP_S>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool operator!=(const ap_private<_AP_W, !_AP_S>& RHS) const {
     return (uint64_t)get_cleared_VAL() != (uint64_t)RHS.get_cleared_VAL();
   }
 
@@ -1815,35 +1815,35 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
   }
 
   /// one's complement.
-  HLS_CONSTEXPR INLINE ap_private<_AP_W + !_AP_S, true> operator~() const {
+  HLS_CONSTEXPR AP_INLINE ap_private<_AP_W + !_AP_S, true> operator~() const {
     ap_private<_AP_W + !_AP_S, true> Result(*this);
     Result.flip();
     return Result;
   }
 
   /// two's complement.
-  HLS_CONSTEXPR INLINE typename RType<1, false>::minus operator-() const {
+  HLS_CONSTEXPR AP_INLINE typename RType<1, false>::minus operator-() const {
     return ap_private<1, false>(0) - (*this);
   }
 
   /// logic negation.
-  HLS_CONSTEXPR INLINE bool operator!() const { return !get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE bool operator!() const { return !get_cleared_VAL(); }
 
-  INLINE std::string toString(uint8_t radix, bool wantSigned) const;
-  INLINE std::string toStringUnsigned(uint8_t radix = 10) const {
+  AP_INLINE std::string toString(uint8_t radix, bool wantSigned) const;
+  AP_INLINE std::string toStringUnsigned(uint8_t radix = 10) const {
     return toString(radix, false);
   }
-  INLINE std::string toStringSigned(uint8_t radix = 10) const {
+  AP_INLINE std::string toStringSigned(uint8_t radix = 10) const {
     return toString(radix, true);
   }
-  INLINE void clear() { VAL = 0; }
-  INLINE ap_private& clear(uint32_t bitPosition) {
+  AP_INLINE void clear() { VAL = 0; }
+  AP_INLINE ap_private& clear(uint32_t bitPosition) {
     VAL &= ~(1ULL << (bitPosition));
     clearUnusedBits();
     return *this;
   }
 
-  HLS_CONSTEXPR INLINE ap_private ashr(uint32_t shiftAmt) const {
+  HLS_CONSTEXPR AP_INLINE ap_private ashr(uint32_t shiftAmt) const {
     if (_AP_S)
       return ap_private((shiftAmt == BitWidth) ? 0
                                                : ((int64_t)get_cleared_VAL()) >> (shiftAmt));
@@ -1853,13 +1853,13 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
   }
 
 
-  HLS_CONSTEXPR INLINE ap_private lshr(uint32_t shiftAmt) const {
+  HLS_CONSTEXPR AP_INLINE ap_private lshr(uint32_t shiftAmt) const {
     return ap_private((shiftAmt == BitWidth)
                           ? ap_private(0)
                           : ap_private((get_cleared_VAL() & mask) >> (shiftAmt)));
   }
 
-  HLS_CONSTEXPR INLINE ap_private shl(uint32_t shiftAmt) const
+  HLS_CONSTEXPR AP_INLINE ap_private shl(uint32_t shiftAmt) const
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -1879,27 +1879,27 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
     // ap_private(VAL << shiftAmt));
   }
 
-  HLS_CONSTEXPR INLINE int64_t getSExtValue() const { return get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int64_t getSExtValue() const { return get_cleared_VAL(); }
 
   // XXX XXX this function is used in CBE
-  HLS_CONSTEXPR INLINE uint64_t getZExtValue() const { return get_cleared_VAL() & mask; }
+  HLS_CONSTEXPR AP_INLINE uint64_t getZExtValue() const { return get_cleared_VAL() & mask; }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE ap_private(const _private_range_ref<_AP_W2, _AP_S2>& ref) :VAL((ValType)ref.get()){
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private(const _private_range_ref<_AP_W2, _AP_S2>& ref) :VAL((ValType)ref.get()){
     set_canary();
     *this = ref.get();
     check_canary();
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE ap_private(const _private_bit_ref<_AP_W2, _AP_S2>& ref) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private(const _private_bit_ref<_AP_W2, _AP_S2>& ref) {
     set_canary();
     *this = ((uint64_t)(bool)ref);
     check_canary();
   }
 
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& ref) {
+//  AP_INLINE ap_private(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& ref) {
 //    set_canary();
 //    *this = ref.get();
 //    check_canary();
@@ -1907,7 +1907,7 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_private(
+//  AP_INLINE ap_private(
 //      const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
 //    set_canary();
 //    *this = ((val.operator ap_private<_AP_W2, false>()));
@@ -1916,98 +1916,98 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_private(
+//  AP_INLINE ap_private(
 //      const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
 //    set_canary();
 //    *this = (uint64_t)(bool)val;
 //    check_canary();
 //  }
 
-  INLINE void write(const ap_private<_AP_W, _AP_S>& op2) volatile {
+  AP_INLINE void write(const ap_private<_AP_W, _AP_S>& op2) volatile {
     *this = (op2);
   }
 
   // Explicit conversions to C interger types
   //-----------------------------------------------------------
-  HLS_CONSTEXPR INLINE operator ValType() const { return get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE operator ValType() const { return get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_uchar() const { return (unsigned char)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_uchar() const { return (unsigned char)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_char() const { return (signed char)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_char() const { return (signed char)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_ushort() const { return (unsigned short)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_ushort() const { return (unsigned short)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_short() const { return (short)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_short() const { return (short)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_int() const {
+  HLS_CONSTEXPR AP_INLINE int to_int() const {
     //      ap_private<64 /* _AP_W */, _AP_S> res(V);
     return (int)get_cleared_VAL();
   }
 
-  HLS_CONSTEXPR INLINE unsigned to_uint() const { return (unsigned)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE unsigned to_uint() const { return (unsigned)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE long to_long() const { return (long)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE long to_long() const { return (long)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE unsigned long to_ulong() const { return (unsigned long)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE unsigned long to_ulong() const { return (unsigned long)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE ap_slong to_int64() const { return (ap_slong)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE ap_slong to_int64() const { return (ap_slong)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE ap_ulong to_uint64() const { return (ap_ulong)get_cleared_VAL(); }
+  HLS_CONSTEXPR AP_INLINE ap_ulong to_uint64() const { return (ap_ulong)get_cleared_VAL(); }
 
-  HLS_CONSTEXPR INLINE double to_double() const {
+  HLS_CONSTEXPR AP_INLINE double to_double() const {
     if (isNegative())
       return roundToDouble(true);
     else
       return roundToDouble(false);
   }
 
-  HLS_CONSTEXPR INLINE unsigned length() const { return _AP_W; }
+  HLS_CONSTEXPR AP_INLINE unsigned length() const { return _AP_W; }
 
-  HLS_CONSTEXPR INLINE bool isMinValue() const { return get_cleared_VAL() == 0; }
+  HLS_CONSTEXPR AP_INLINE bool isMinValue() const { return get_cleared_VAL() == 0; }
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator&=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator&=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     VAL = (ValType)(((uint64_t)VAL) & RHS.get_VAL());
     clearUnusedBits();
     return *this;
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator|=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator|=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     VAL = (ValType)(((uint64_t)VAL) | RHS.get_VAL());
     clearUnusedBits();
     return *this;
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator^=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator^=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     VAL = (ValType)(((uint64_t)VAL) ^ RHS.get_VAL());
     clearUnusedBits();
     return *this;
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator*=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator*=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     VAL = (ValType)(((uint64_t)get_cleared_VAL()) * RHS.get_cleared_VAL());
     clearUnusedBits();
     return *this;
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator+=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator+=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     VAL = (ValType)(((uint64_t)get_cleared_VAL()) + RHS.get_cleared_VAL());
     clearUnusedBits();
     return *this;
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator-=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator-=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     VAL = (ValType)(((uint64_t)get_cleared_VAL()) - RHS.get_cleared_VAL());
     clearUnusedBits();
     return *this;
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::logic operator&(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::logic operator&(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     if (RType<_AP_W1, _AP_S1>::logic_w <= 64) {
       typename RType<_AP_W1, _AP_S1>::logic Ret(((uint64_t)get_cleared_VAL()) &
@@ -2020,7 +2020,7 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::logic operator^(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::logic operator^(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     if (RType<_AP_W1, _AP_S1>::logic_w <= 64) {
       typename RType<_AP_W1, _AP_S1>::logic Ret(((uint64_t)get_cleared_VAL()) ^
@@ -2033,7 +2033,7 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::logic operator|(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::logic operator|(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     if (RType<_AP_W1, _AP_S1>::logic_w <= 64) {
       typename RType<_AP_W1, _AP_S1>::logic Ret(((uint64_t)get_cleared_VAL()) |
@@ -2045,20 +2045,20 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
     }
   }
 
-  HLS_CONSTEXPR INLINE ap_private And(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private And(const ap_private& RHS) const {
     return ap_private(get_cleared_VAL() & RHS.get_cleared_VAL());
   }
 
-  HLS_CONSTEXPR INLINE ap_private Or(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Or(const ap_private& RHS) const {
     return ap_private(get_cleared_VAL() | RHS.get_cleared_VAL());
   }
 
-  HLS_CONSTEXPR INLINE ap_private Xor(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Xor(const ap_private& RHS) const {
     return ap_private(get_cleared_VAL() ^ RHS.get_cleared_VAL());
   }
 #if 1
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::mult operator*(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::mult operator*(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     if (RType<_AP_W1, _AP_S1>::mult_w <= 64) {
       typename RType<_AP_W1, _AP_S1>::mult Result(((uint64_t)VAL) *
@@ -2071,50 +2071,50 @@ HLS_CONSTEXPR ASSIGN_OP_FROM_INT(double)
     }
   }
 #endif
-  HLS_CONSTEXPR INLINE ap_private Mul(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Mul(const ap_private& RHS) const {
     return ap_private(VAL * RHS.get_VAL());
   }
 
-  HLS_CONSTEXPR INLINE ap_private Add(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Add(const ap_private& RHS) const {
     return ap_private(VAL + RHS.get_VAL());
   }
 
-  HLS_CONSTEXPR INLINE ap_private Sub(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Sub(const ap_private& RHS) const {
     return ap_private(VAL - RHS.get_VAL());
   }
 
-  HLS_CONSTEXPR INLINE ap_private& operator&=(uint64_t RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator&=(uint64_t RHS) {
     VAL &= (ValType)RHS;
     clearUnusedBits();
     return *this;
   }
-  HLS_CONSTEXPR INLINE ap_private& operator|=(uint64_t RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator|=(uint64_t RHS) {
     VAL |= (ValType)RHS;
     clearUnusedBits();
     return *this;
   }
-  HLS_CONSTEXPR INLINE ap_private& operator^=(uint64_t RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator^=(uint64_t RHS) {
     VAL ^= (ValType)RHS;
     clearUnusedBits();
     return *this;
   }
-  HLS_CONSTEXPR INLINE ap_private& operator*=(uint64_t RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator*=(uint64_t RHS) {
     VAL *= (ValType)RHS;
     clearUnusedBits();
     return *this;
   }
-  HLS_CONSTEXPR INLINE ap_private& operator+=(uint64_t RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator+=(uint64_t RHS) {
     VAL += (ValType)RHS;
     clearUnusedBits();
     return *this;
   }
-  HLS_CONSTEXPR INLINE ap_private& operator-=(uint64_t RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator-=(uint64_t RHS) {
     VAL -= (ValType)RHS;
     clearUnusedBits();
     return *this;
   }
 #define OP_ASSIGN_WITG_INT(BIN_OP, C_TYPE)                              \
-  HLS_CONSTEXPR INLINE ap_private& operator BIN_OP(C_TYPE RHS) {        \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator BIN_OP(C_TYPE RHS) {        \
     VAL BIN_OP (ValType)RHS;                                                \
     clearUnusedBits();                                                  \
     return *this;                                                       \
@@ -2139,7 +2139,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   //OPS_ASSIGN_WITG_INT(long)
   //OPS_ASSIGN_WITG_INT(unsigned long)
 
-  HLS_CONSTEXPR INLINE bool isMinSignedValue() const {
+  HLS_CONSTEXPR AP_INLINE bool isMinSignedValue() const {
     //static const uint64_t min_mask = ~(~0ULL << (_AP_W - 1)); //double check
     const uint64_t min_mask = ~(~0ULL << (_AP_W - 1));
     return BitWidth == 1 ? get_cleared_VAL() == 1
@@ -2148,7 +2148,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::plus operator+(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::plus operator+(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     if (RType<_AP_W1, _AP_S1>::plus_w <= 64)
       return typename RType<_AP_W1, _AP_S1>::plus(
@@ -2161,7 +2161,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::minus operator-(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::minus operator-(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     if (RType<_AP_W1, _AP_S1>::minus_w <= 64)
       return typename RType<_AP_W1, _AP_S1>::minus(
@@ -2171,17 +2171,17 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
     return Result;
   }
 
-  HLS_CONSTEXPR INLINE uint32_t countPopulation() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t countPopulation() const {
     return ap_private_ops::CountPopulation_64(get_cleared_VAL());
   }
-  HLS_CONSTEXPR INLINE uint32_t countLeadingZeros() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t countLeadingZeros() const {
     int remainder = BitWidth % 64;
     int excessBits = (64 - remainder) % 64;
     uint32_t Count = ap_private_ops::CountLeadingZeros_64(get_cleared_VAL());
     if (Count) Count -= excessBits;
     return AESL_std::min(Count, (uint32_t)_AP_W);
   }
-  HLS_CONSTEXPR INLINE uint32_t countLeadingOnes() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t countLeadingOnes() const {
     int remainder = BitWidth % 64;
     int excessBits = (64 - remainder) % 64;
     uint32_t Count = ap_private_ops::countLeadingOnes_64(get_cleared_VAL(), 0);
@@ -2190,14 +2190,14 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   /// HiBits - This function returns the high "numBits" bits of this ap_private.
-  HLS_CONSTEXPR INLINE ap_private<_AP_W, _AP_S> getHiBits(uint32_t numBits) const {
+  HLS_CONSTEXPR AP_INLINE ap_private<_AP_W, _AP_S> getHiBits(uint32_t numBits) const {
     ap_private<_AP_W, _AP_S> ret(*this);
     ret = (ret) >> (BitWidth - numBits);
     return ret;
   }
 
   /// LoBits - This function returns the low "numBits" bits of this ap_private.
-  HLS_CONSTEXPR INLINE ap_private<_AP_W, _AP_S> getLoBits(uint32_t numBits) const {
+  HLS_CONSTEXPR AP_INLINE ap_private<_AP_W, _AP_S> getLoBits(uint32_t numBits) const {
     ap_private<_AP_W, _AP_S> ret(((uint64_t)VAL) << (BitWidth - numBits));
     ret = (ret) >> (BitWidth - numBits);
     return ret;
@@ -2205,26 +2205,26 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
     // numBits));
   }
 
-  INLINE ap_private<_AP_W, _AP_S>& set(uint32_t bitPosition) {
+  AP_INLINE ap_private<_AP_W, _AP_S>& set(uint32_t bitPosition) {
     //clearUnusedBits();
     VAL |= (1ULL << (bitPosition));
     clearUnusedBits();
     return *this; // clearUnusedBits();
   }
 
-  INLINE void set() {
+  AP_INLINE void set() {
     VAL = (ValType)~0ULL;
     clearUnusedBits();
   }
 
   template <int _AP_W3>
-  INLINE void set(const ap_private<_AP_W3, false>& val) {
+  AP_INLINE void set(const ap_private<_AP_W3, false>& val) {
     operator=(ap_private<_AP_W3, _AP_S>(val));
   }
 
-  INLINE void set(const ap_private& val) { operator=(val); }
+  AP_INLINE void set(const ap_private& val) { operator=(val); }
 
-  HLS_CONSTEXPR INLINE void clearUnusedBits(void) 
+  HLS_CONSTEXPR AP_INLINE void clearUnusedBits(void) 
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -2247,7 +2247,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 #endif
   }
 
-  INLINE void clearUnusedBits(void) volatile
+  AP_INLINE void clearUnusedBits(void) volatile
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -2261,13 +2261,13 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
                            : (uint64_t)VAL));
   }
 
-  INLINE void clearUnusedBitsToZero(void) {
+  AP_INLINE void clearUnusedBitsToZero(void) {
     enum { excess_bits = (_AP_W % 64) ? 64 - _AP_W % 64 : 0 };
     static uint64_t mask = ~0ULL >> (excess_bits);
     VAL &= mask;
   }
 
-  INLINE ap_private udiv(const ap_private& RHS) const {
+  AP_INLINE ap_private udiv(const ap_private& RHS) const {
     ap_private<_AP_W, _AP_S> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private RHS_(RHS);
@@ -2278,7 +2278,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 
   /// Signed divide this ap_private by ap_private RHS.
   /// @brief Signed division function for ap_private.
-  INLINE ap_private sdiv(const ap_private& RHS) const {
+  AP_INLINE ap_private sdiv(const ap_private& RHS) const {
     ap_private<_AP_W, _AP_S> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private RHS_(RHS);
@@ -2295,7 +2295,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <bool _AP_S2>
-  INLINE ap_private urem(const ap_private<_AP_W, _AP_S2>& RHS) const {
+  AP_INLINE ap_private urem(const ap_private<_AP_W, _AP_S2>& RHS) const {
     ap_private<_AP_W, _AP_S> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private<_AP_W, _AP_S2> RHS_(RHS);
@@ -2308,7 +2308,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// Signed remainder operation on ap_private.
   /// @brief Function for signed remainder operation.
   template <bool _AP_S2>
-  INLINE ap_private srem(const ap_private<_AP_W, _AP_S2>& RHS) const {
+  AP_INLINE ap_private srem(const ap_private<_AP_W, _AP_S2>& RHS) const {
     ap_private<_AP_W, _AP_S> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private<_AP_W, _AP_S2> RHS_(RHS);
@@ -2329,12 +2329,12 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool eq(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool eq(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return (*this) == RHS;
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ne(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ne(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return !((*this) == RHS);
   }
 
@@ -2343,7 +2343,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this < RHS when both are considered unsigned.
   /// @brief Unsigned less than comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ult(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ult(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     if (_AP_W1 <= 64) {
       uint64_t lhsZext = ((uint64_t(VAL)) << (64 - _AP_W)) >> (64 - _AP_W);
       uint64_t rhsZext =
@@ -2358,7 +2358,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this < RHS when both are considered signed.
   /// @brief Signed less than comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool slt(const ap_private<_AP_W1, _AP_S1>& RHS) const
+  HLS_CONSTEXPR AP_INLINE bool slt(const ap_private<_AP_W1, _AP_S1>& RHS) const
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -2378,7 +2378,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this <= RHS when both are considered unsigned.
   /// @brief Unsigned less or equal comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ule(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ule(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return ult(RHS) || eq(RHS);
   }
 
@@ -2387,7 +2387,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this <= RHS when both are considered signed.
   /// @brief Signed less or equal comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool sle(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool sle(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return slt(RHS) || eq(RHS);
   }
 
@@ -2396,7 +2396,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this > RHS when both are considered unsigned.
   /// @brief Unsigned greather than comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ugt(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ugt(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return !ult(RHS) && !eq(RHS);
   }
 
@@ -2405,7 +2405,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this > RHS when both are considered signed.
   /// @brief Signed greather than comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool sgt(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool sgt(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return !slt(RHS) && !eq(RHS);
   }
 
@@ -2414,7 +2414,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this >= RHS when both are considered unsigned.
   /// @brief Unsigned greater or equal comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool uge(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool uge(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return !ult(RHS);
   }
 
@@ -2423,38 +2423,38 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// @returns true if *this >= RHS when both are considered signed.
   /// @brief Signed greather or equal comparison
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool sge(const ap_private<_AP_W1, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool sge(const ap_private<_AP_W1, _AP_S1>& RHS) const {
     return !slt(RHS);
   }
 
-  HLS_CONSTEXPR INLINE ap_private abs() const {
+  HLS_CONSTEXPR AP_INLINE ap_private abs() const {
     if (isNegative()) return -(*this);
     return *this;
   }
 
-  HLS_CONSTEXPR INLINE ap_private<_AP_W, false> get() const {
+  HLS_CONSTEXPR AP_INLINE ap_private<_AP_W, false> get() const {
     ap_private<_AP_W, false> ret(*this);
     return ret;
   }
 
-  HLS_CONSTEXPR INLINE static uint32_t getBitsNeeded(const char* str, uint32_t slen,
+  HLS_CONSTEXPR AP_INLINE static uint32_t getBitsNeeded(const char* str, uint32_t slen,
                                        uint8_t radix) {
     return _AP_W;
   }
 
-  HLS_CONSTEXPR INLINE uint32_t getActiveBits() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t getActiveBits() const {
     uint32_t bits = _AP_W - countLeadingZeros();
     return bits ? bits : 1;
   }
 
-  HLS_CONSTEXPR INLINE double roundToDouble(bool isSigned = false) const {
+  HLS_CONSTEXPR AP_INLINE double roundToDouble(bool isSigned = false) const {
     ValType val = get_cleared_VAL();
     return isSigned ? double((int64_t)val) : double((uint64_t)val);
   }
 
   /*Reverse the contents of ap_private instance. I.e. LSB becomes MSB and vise
    * versa*/
-  INLINE ap_private& reverse() {
+  AP_INLINE ap_private& reverse() {
     for (int i = 0; i < _AP_W / 2; ++i) {
       bool tmp = operator[](i);
       if (operator[](_AP_W - 1 - i))
@@ -2471,25 +2471,25 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   /*Return true if the value of ap_private instance is zero*/
-  HLS_CONSTEXPR INLINE bool iszero() const { return isMinValue(); }
+  HLS_CONSTEXPR AP_INLINE bool iszero() const { return isMinValue(); }
 
-  HLS_CONSTEXPR INLINE bool to_bool() const { return !iszero(); }
+  HLS_CONSTEXPR AP_INLINE bool to_bool() const { return !iszero(); }
 
   /* x < 0 */
-  HLS_CONSTEXPR INLINE bool sign() const {
+  HLS_CONSTEXPR AP_INLINE bool sign() const {
     if (isNegative()) return true;
     return false;
   }
 
   /* x[i] = !x[i] */
-  INLINE void invert(int i) {
+  AP_INLINE void invert(int i) {
     assert(i >= 0 && "Attempting to read bit with negative index");
     assert(i < _AP_W && "Attempting to read bit beyond MSB");
     flip(i);
   }
 
   /* x[i] */
-  INLINE bool test(int i) const {
+  AP_INLINE bool test(int i) const {
     assert(i >= 0 && "Attempting to read bit with negative index");
     assert(i < _AP_W && "Attempting to read bit beyond MSB");
     return operator[](i);
@@ -2497,7 +2497,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 
   // This is used for sc_lv and sc_bv, which is implemented by sc_uint
   // Rotate an ap_private object n places to the left
-  INLINE void lrotate(int n) {
+  AP_INLINE void lrotate(int n) {
     assert(n >= 0 && "Attempting to shift negative index");
     assert(n < _AP_W && "Shift value larger than bit width");
     operator=(shl(n) | lshr(_AP_W - n));
@@ -2505,14 +2505,14 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 
   // This is used for sc_lv and sc_bv, which is implemented by sc_uint
   // Rotate an ap_private object n places to the right
-  INLINE void rrotate(int n) {
+  AP_INLINE void rrotate(int n) {
     assert(n >= 0 && "Attempting to shift negative index");
     assert(n < _AP_W && "Shift value larger than bit width");
     operator=(lshr(n) | shl(_AP_W - n));
   }
 
   // Set the ith bit into v
-  HLS_CONSTEXPR_EXTRA INLINE void set(int i, bool v) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE void set(int i, bool v) {
 #ifndef HLS_CONSTEXPR_EXTRA_ENABLE
     assert(i >= 0 && "Attempting to write bit with negative index");
     assert(i < _AP_W && "Attempting to write bit beyond MSB");
@@ -2521,7 +2521,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   // Set the ith bit into v
-  HLS_CONSTEXPR_EXTRA INLINE void set_bit(int i, bool v) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE void set_bit(int i, bool v) {
 #ifndef HLS_CONSTEXPR_EXTRA_ENABLE
     assert(i >= 0 && "Attempting to write bit with negative index");
     assert(i < _AP_W && "Attempting to write bit beyond MSB");
@@ -2530,7 +2530,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   // Get the value of ith bit
-  HLS_CONSTEXPR_EXTRA INLINE bool get_bit(int i) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool get_bit(int i) const {
 #ifndef HLS_CONSTEXPR_EXTRA_ENABLE
     assert(i >= 0 && "Attempting to read bit with negative index");
     assert(i < _AP_W && "Attempting to read bit beyond MSB");
@@ -2539,27 +2539,27 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   /// Toggle all bits.
-  HLS_CONSTEXPR INLINE ap_private& flip() {
+  HLS_CONSTEXPR AP_INLINE ap_private& flip() {
     VAL = (ValType)((~0ULL ^ get_cleared_VAL()) & mask);
     clearUnusedBits();
     return *this;
   }
 
   /// Toggles a given bit to its opposite value.
-  INLINE ap_private& flip(uint32_t bitPosition) {
+  AP_INLINE ap_private& flip(uint32_t bitPosition) {
     assert(bitPosition < BitWidth && "Out of the bit-width range!");
     set_bit(bitPosition, !get_bit(bitPosition));
     return *this;
   }
 
   // complements every bit
-  HLS_CONSTEXPR INLINE void b_not() { flip(); }
+  HLS_CONSTEXPR AP_INLINE void b_not() { flip(); }
 
 // Binary Arithmetic
 //-----------------------------------------------------------
 #define OP_BIN_AP(Sym, Rty, Fun)                           \
   template <int _AP_W2, bool _AP_S2>                       \
-  INLINE typename RType<_AP_W2, _AP_S2>::Rty operator Sym( \
+  AP_INLINE typename RType<_AP_W2, _AP_S2>::Rty operator Sym( \
       const ap_private<_AP_W2, _AP_S2>& op) const {        \
     typename RType<_AP_W2, _AP_S2>::Rty lhs(*this);        \
     typename RType<_AP_W2, _AP_S2>::Rty rhs(op);           \
@@ -2573,7 +2573,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 #undef OP_BIN_AP
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE typename RType<_AP_W2, _AP_S2>::div operator/(
+  AP_INLINE typename RType<_AP_W2, _AP_S2>::div operator/(
       const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<AP_MAX(_AP_W + (_AP_S || _AP_S2), _AP_W2 + (_AP_S || _AP_S2)),
                (_AP_W > _AP_W2 ? _AP_S
@@ -2588,7 +2588,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE typename RType<_AP_W2, _AP_S2>::mod operator%(
+  AP_INLINE typename RType<_AP_W2, _AP_S2>::mod operator%(
       const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<AP_MAX(_AP_W + (_AP_S || _AP_S2), _AP_W2 + (_AP_S || _AP_S2)),
                (_AP_W > _AP_W2 ? _AP_S
@@ -2606,7 +2606,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 
 #define OP_ASSIGN_AP_2(Sym)                         \
   template <int _AP_W2, bool _AP_S2>                \
-  INLINE ap_private<_AP_W, _AP_S>& operator Sym##=( \
+  AP_INLINE ap_private<_AP_W, _AP_S>& operator Sym##=( \
       const ap_private<_AP_W2, _AP_S2>& op) {       \
     *this = operator Sym(op);                       \
     return *this;                                   \
@@ -2623,7 +2623,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //    OP_ASSIGN_AP(|)
 
 #define OP_LEFT_SHIFT_CTYPE(TYPE, SIGNED)             \
-  INLINE ap_private operator<<(const TYPE op) const { \
+  AP_INLINE ap_private operator<<(const TYPE op) const { \
     if (op >= _AP_W) return ap_private(0);            \
     if (SIGNED && op < 0) return *this >> (0 - op);   \
     return shl(op);                                   \
@@ -2648,7 +2648,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 #undef OP_LEFT_SHIFT_CTYPE
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE ap_private operator<<(const ap_private<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE ap_private operator<<(const ap_private<_AP_W2, _AP_S2>& op2) const {
     if (_AP_S2 == false) {
       uint32_t sh = op2.to_uint();
       return *this << sh;
@@ -2659,7 +2659,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
 #define OP_RIGHT_SHIFT_CTYPE(TYPE, SIGNED)            \
-  INLINE ap_private operator>>(const TYPE op) const { \
+  AP_INLINE ap_private operator>>(const TYPE op) const { \
     if (op >= _AP_W) {                                \
       if (isNegative())                               \
         return ap_private(-1);                        \
@@ -2692,7 +2692,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 #undef OP_RIGHT_SHIFT_CTYPE
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE ap_private operator>>(const ap_private<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE ap_private operator>>(const ap_private<_AP_W2, _AP_S2>& op2) const {
     if (_AP_S2 == false) {
       uint32_t sh = op2.to_uint();
       return *this >> sh;
@@ -2705,7 +2705,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// Shift assign
   //-----------------------------------------------------------------
 
-  //INLINE const ap_private& operator<<=(uint32_t shiftAmt) {
+  //AP_INLINE const ap_private& operator<<=(uint32_t shiftAmt) {
   //  VAL <<= shiftAmt;
   //  clearUnusedBits();
   //  return *this;
@@ -2713,18 +2713,18 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 
 #define OP_ASSIGN_AP(Sym)                                                    \
   template <int _AP_W2, bool _AP_S2>                                         \
-  HLS_CONSTEXPR INLINE ap_private& operator Sym##=(int op) {                               \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator Sym##=(int op) {                               \
     clearUnusedBits();                                                       \
     *this = operator Sym(op);                                                \
     return *this;                                                            \
   }                                                                          \
-  HLS_CONSTEXPR INLINE ap_private& operator Sym##=(unsigned int op) {                      \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator Sym##=(unsigned int op) {                      \
     clearUnusedBits();                                                       \
     *this = operator Sym(op);                                                \
     return *this;                                                            \
   }                                                                          \
   template <int _AP_W2, bool _AP_S2>                                         \
-  HLS_CONSTEXPR INLINE ap_private& operator Sym##=(const ap_private<_AP_W2, _AP_S2>& op) { \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator Sym##=(const ap_private<_AP_W2, _AP_S2>& op) { \
     clearUnusedBits();                                                       \
     *this = operator Sym(op);                                                \
     return *this;                                                            \
@@ -2737,7 +2737,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   /// Comparisons
   //-----------------------------------------------------------------
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool operator==(const ap_private<_AP_W1, _AP_S1>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator==(const ap_private<_AP_W1, _AP_S1>& op) const {
     ap_private<_AP_W, _AP_S> tmp(*this);
     tmp.clearUnusedBits();
     ap_private<_AP_W1, _AP_S1> op_(op);
@@ -2753,12 +2753,12 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator!=(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator!=(const ap_private<_AP_W2, _AP_S2>& op) const {
     return !(*this == op);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator>(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator>(const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<_AP_W, _AP_S> tmp(*this);
     tmp.clearUnusedBits();
     ap_private<_AP_W2, _AP_S2> op_(op);
@@ -2791,12 +2791,12 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator<=(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator<=(const ap_private<_AP_W2, _AP_S2>& op) const {
     return !(*this > op);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator<(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator<(const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<_AP_W, _AP_S> tmp(*this);
     tmp.clearUnusedBits();
     ap_private<_AP_W2, _AP_S2> op_(op);
@@ -2823,76 +2823,76 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator>=(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator>=(const ap_private<_AP_W2, _AP_S2>& op) const {
     return !(*this < op);
   }
 
   /// Bit and Part Select
   //--------------------------------------------------------------
   // FIXME now _private_range_ref refs to _AP_ROOT_TYPE(struct ssdm_int).
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) {
     return _private_range_ref<_AP_W, _AP_S>(this, Hi, Lo);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) const {
     return _private_range_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>*>(this), Hi, Lo);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) const {
     return _private_range_ref<_AP_W, _AP_S>(
         (const_cast<ap_private<_AP_W, _AP_S>*>(this)), Hi, Lo);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) {
     return _private_range_ref<_AP_W, _AP_S>(this, Hi, Lo);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref<_AP_W, _AP_S> operator[](int index) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref<_AP_W, _AP_S> operator[](int index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref<_AP_W, _AP_S> operator[](
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref<_AP_W, _AP_S> operator[](
       const ap_private<_AP_W2, _AP_S2>& index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index.to_int());
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](int index) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](int index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](
+  HLS_CONSTEXPR_EXTRA AP_INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](
       const ap_private<_AP_W2, _AP_S2>& index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index.to_int());
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref<_AP_W, _AP_S> bit(int index) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref<_AP_W, _AP_S> bit(int index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref<_AP_W, _AP_S> bit(const ap_private<_AP_W2, _AP_S2>& index) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref<_AP_W, _AP_S> bit(const ap_private<_AP_W2, _AP_S2>& index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index.to_int());
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE const _private_bit_ref<_AP_W, _AP_S> bit(int index) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE const _private_bit_ref<_AP_W, _AP_S> bit(int index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE const _private_bit_ref<_AP_W, _AP_S> bit(
+  HLS_CONSTEXPR_EXTRA AP_INLINE const _private_bit_ref<_AP_W, _AP_S> bit(
       const ap_private<_AP_W2, _AP_S2>& index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index.to_int());
   }
 
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       ap_private<_AP_W2, _AP_S2> >
 //  concat(const ap_private<_AP_W2, _AP_S2>& a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -2902,7 +2902,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       ap_private<_AP_W2, _AP_S2> >
 //  concat(ap_private<_AP_W2, _AP_S2>& a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -2910,7 +2910,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(const ap_private<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(
@@ -2919,7 +2919,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(const ap_private<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(
@@ -2927,7 +2927,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(ap_private<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(
@@ -2935,14 +2935,14 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(ap_private<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(*this, a2);
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       _private_range_ref<_AP_W2, _AP_S2> >
 //  operator,(const _private_range_ref<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -2952,7 +2952,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       _private_range_ref<_AP_W2, _AP_S2> >
 //  operator,(_private_range_ref<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -2960,7 +2960,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
 //                       _private_bit_ref<_AP_W2, _AP_S2> >
 //  operator,(const _private_bit_ref<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
@@ -2970,7 +2970,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
 //                       _private_bit_ref<_AP_W2, _AP_S2> >
 //  operator,(_private_bit_ref<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
@@ -2978,7 +2978,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
 //                       ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
 //  operator,(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
@@ -2988,7 +2988,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
 //                       ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
 //  operator,(ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
@@ -2998,7 +2998,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_concat_ref<
+//  AP_INLINE ap_concat_ref<
 //      _AP_W, ap_private, _AP_W2,
 //      af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //  operator,(const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>
@@ -3013,7 +3013,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_concat_ref<
+//  AP_INLINE ap_concat_ref<
 //      _AP_W, ap_private, _AP_W2,
 //      af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //  operator,(af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> &a2) {
@@ -3025,7 +3025,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_W, ap_private, 1,
 //                    af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //      operator,(const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>
@@ -3040,7 +3040,7 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_W, ap_private, 1,
 //                    af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //      operator,(
@@ -3051,44 +3051,44 @@ OP_ASSIGN_WITG_INT(-=, C_TYPE)
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator&(
+//  AP_INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator&(
 //      const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
 //    return *this & a2.get();
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator|(
+//  AP_INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator|(
 //      const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
 //    return *this | a2.get();
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator^(
+//  AP_INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator^(
 //      const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
 //    return *this ^ a2.get();
 //  }
 
   // Reduce operation
   //-----------------------------------------------------------
-  INLINE bool and_reduce() const { return (get_cleared_VAL() & mask) == mask; }
+  AP_INLINE bool and_reduce() const { return (get_cleared_VAL() & mask) == mask; }
 
-  INLINE bool nand_reduce() const { return (get_cleared_VAL() & mask) != mask; }
+  AP_INLINE bool nand_reduce() const { return (get_cleared_VAL() & mask) != mask; }
 
-  INLINE bool or_reduce() const { return (bool)get_cleared_VAL(); }
+  AP_INLINE bool or_reduce() const { return (bool)get_cleared_VAL(); }
 
-  INLINE bool nor_reduce() const { return get_cleared_VAL() == 0; }
+  AP_INLINE bool nor_reduce() const { return get_cleared_VAL() == 0; }
 
-  INLINE bool xor_reduce() const {
+  AP_INLINE bool xor_reduce() const {
     unsigned int i = countPopulation();
     return (i % 2) ? true : false;
   }
 
-  INLINE bool xnor_reduce() const {
+  AP_INLINE bool xnor_reduce() const {
     unsigned int i = countPopulation();
     return (i % 2) ? false : true;
   }
 
-  INLINE std::string to_string(uint8_t radix = 2, bool sign = false) const {
+  AP_INLINE std::string to_string(uint8_t radix = 2, bool sign = false) const {
     return toString(radix, radix == 10 ? _AP_S : sign);
   }
 }; // End of class ap_private <_AP_W, _AP_S, true>
@@ -3224,7 +3224,7 @@ class ap_private<_AP_W, _AP_S, false> {
   /// @param bigVal a sequence of words to form the initial value of the
   /// ap_private
   /// @brief Construct an ap_private, initialized as bigVal[].
-  INLINE ap_private(uint32_t numWords, const uint64_t bigVal[]) {
+  AP_INLINE ap_private(uint32_t numWords, const uint64_t bigVal[]) {
     set_canary();
     assert(bigVal && "Null pointer detected!");
     {
@@ -3249,7 +3249,7 @@ class ap_private<_AP_W, _AP_S, false> {
   /// @param val the string to be interpreted
   /// @param radix the radix of Val to use for the intepretation
   /// @brief Construct an ap_private from a string representation.
-  INLINE ap_private(const std::string& val, uint8_t radix = 2) {
+  AP_INLINE ap_private(const std::string& val, uint8_t radix = 2) {
     set_canary();
     assert(!val.empty() && "The input string is empty.");
     const char* c_str = val.c_str();
@@ -3267,13 +3267,13 @@ class ap_private<_AP_W, _AP_S, false> {
   /// @param radix the radix to use for the conversion
   /// @brief Construct an ap_private from a string representation.
   /// This method does not consider whether it is negative or not.
-  INLINE ap_private(const char strStart[], uint32_t slen, uint8_t radix) {
+  AP_INLINE ap_private(const char strStart[], uint32_t slen, uint8_t radix) {
     set_canary();
     fromString(strStart, slen, radix);
     check_canary();
   }
 
-  INLINE void report() {
+  AP_INLINE void report() {
     _AP_ERROR(_AP_W > MAX_MODE(AP_INT_MAX_W) * 1024,
               "ap_%sint<%d>: Bitwidth exceeds the "
               "default max value %d. Please use macro "
@@ -3295,11 +3295,11 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 ;
 #ifdef AP_CANARY
   uint64_t CANARY;
-  INLINE void check_canary() { assert(CANARY == (uint64_t)0xDEADBEEFDEADBEEF); }
-  INLINE void set_canary() { CANARY = (uint64_t)0xDEADBEEFDEADBEEF; }
+  AP_INLINE void check_canary() { assert(CANARY == (uint64_t)0xDEADBEEFDEADBEEF); }
+  AP_INLINE void set_canary() { CANARY = (uint64_t)0xDEADBEEFDEADBEEF; }
 #else
-  HLS_CONSTEXPR INLINE void check_canary() {}
-  HLS_CONSTEXPR INLINE void set_canary() {}
+  HLS_CONSTEXPR AP_INLINE void check_canary() {}
+  HLS_CONSTEXPR AP_INLINE void set_canary() {}
 #endif
 
  public:
@@ -3339,19 +3339,19 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     typedef bool reduce;
   };
 
-  HLS_CONSTEXPR INLINE uint64_t& get_VAL(void) { return pVal[0]; }
-  HLS_CONSTEXPR INLINE uint64_t get_VAL(void) const { return pVal[0]; }
-  INLINE uint64_t get_VAL(void) const volatile { return pVal[0]; }
-  HLS_CONSTEXPR INLINE uint64_t get_cleared_VAL(void) { return pVal[0]; }
-  HLS_CONSTEXPR INLINE uint64_t get_cleared_VAL(void) const { return pVal[0]; }
-  HLS_CONSTEXPR INLINE void set_VAL(uint64_t value) { pVal[0] = value; }
-  HLS_CONSTEXPR INLINE uint64_t& get_pVal(int index) { return pVal[index]; }
-  HLS_CONSTEXPR INLINE uint64_t* get_pVal() { return pVal; }
-  HLS_CONSTEXPR INLINE const uint64_t* get_pVal() const { return pVal; }
-  HLS_CONSTEXPR INLINE uint64_t get_pVal(int index) const { return pVal[index]; }
-  INLINE uint64_t* get_pVal() const volatile { return pVal; }
-  HLS_CONSTEXPR INLINE uint64_t get_pVal(int index) const volatile { return pVal[index]; }
-  HLS_CONSTEXPR INLINE void set_pVal(int i, uint64_t value) { pVal[i] = value; }
+  HLS_CONSTEXPR AP_INLINE uint64_t& get_VAL(void) { return pVal[0]; }
+  HLS_CONSTEXPR AP_INLINE uint64_t get_VAL(void) const { return pVal[0]; }
+  AP_INLINE uint64_t get_VAL(void) const volatile { return pVal[0]; }
+  HLS_CONSTEXPR AP_INLINE uint64_t get_cleared_VAL(void) { return pVal[0]; }
+  HLS_CONSTEXPR AP_INLINE uint64_t get_cleared_VAL(void) const { return pVal[0]; }
+  HLS_CONSTEXPR AP_INLINE void set_VAL(uint64_t value) { pVal[0] = value; }
+  HLS_CONSTEXPR AP_INLINE uint64_t& get_pVal(int index) { return pVal[index]; }
+  HLS_CONSTEXPR AP_INLINE uint64_t* get_pVal() { return pVal; }
+  HLS_CONSTEXPR AP_INLINE const uint64_t* get_pVal() const { return pVal; }
+  HLS_CONSTEXPR AP_INLINE uint64_t get_pVal(int index) const { return pVal[index]; }
+  AP_INLINE uint64_t* get_pVal() const volatile { return pVal; }
+  HLS_CONSTEXPR AP_INLINE uint64_t get_pVal(int index) const volatile { return pVal[index]; }
+  HLS_CONSTEXPR AP_INLINE void set_pVal(int i, uint64_t value) { pVal[i] = value; }
 
   /// This enum is used to hold the constants we needed for ap_private.
   enum {
@@ -3368,7 +3368,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
  public:
   // NOTE changed to explicit to be consistent with ap_private<W,S,true>
-  explicit INLINE ap_private(const char* val) {
+  explicit AP_INLINE ap_private(const char* val) {
     set_canary();
     unsigned char radix = 10;
     std::string str = ap_private_ops::parseString(val, radix); // determine radix.
@@ -3380,7 +3380,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     check_canary();
   }
 
-  INLINE ap_private(const char* val, unsigned char rd) {
+  AP_INLINE ap_private(const char* val, unsigned char rd) {
     set_canary();
     unsigned char radix = rd;
     std::string str = ap_private_ops::parseString(val, radix); // determine radix.
@@ -3395,7 +3395,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE ap_private(const _private_range_ref<_AP_W2, _AP_S2>& ref) {
+  AP_INLINE ap_private(const _private_range_ref<_AP_W2, _AP_S2>& ref) {
     set_canary();
     *this = ref.get();
     report();
@@ -3403,7 +3403,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE ap_private(const _private_bit_ref<_AP_W2, _AP_S2>& ref) {
+  AP_INLINE ap_private(const _private_bit_ref<_AP_W2, _AP_S2>& ref) {
     set_canary();
     *this = ((uint64_t)(bool)ref);
     report();
@@ -3411,7 +3411,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& ref) {
+//  AP_INLINE ap_private(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& ref) {
 //    set_canary();
 //    *this = ref.get();
 //    report();
@@ -3420,7 +3420,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_private(
+//  AP_INLINE ap_private(
 //      const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
 //    set_canary();
 //    *this = ((val.operator ap_private<_AP_W2, false>()));
@@ -3430,7 +3430,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_private(
+//  AP_INLINE ap_private(
 //      const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
 //    set_canary();
 //    *this = (uint64_t)(bool)val;
@@ -3440,7 +3440,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Simply makes *this a copy of that.
   /// @brief Copy Constructor.
-  HLS_CONSTEXPR INLINE ap_private(const ap_private& that):pVal() {
+  HLS_CONSTEXPR AP_INLINE ap_private(const ap_private& that):pVal() {
       set_canary();
       for (int i = 0; i < _AP_N; ++i) pVal[i] = that.get_pVal(i);
       //memcpy(pVal, that.get_pVal(), _AP_N * APINT_WORD_SIZE);
@@ -3449,21 +3449,21 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private(const ap_private<_AP_W1, _AP_S1, false>& that):pVal() {
+  HLS_CONSTEXPR AP_INLINE ap_private(const ap_private<_AP_W1, _AP_S1, false>& that):pVal() {
     set_canary();
     operator=(that);
     check_canary();
   }
 
   template <int _AP_W1, bool _AP_S1>
-  INLINE ap_private(const volatile ap_private<_AP_W1, _AP_S1, false>& that) {
+  AP_INLINE ap_private(const volatile ap_private<_AP_W1, _AP_S1, false>& that) {
     set_canary();
     operator=(const_cast<const ap_private<_AP_W1, _AP_S1, false>&>(that));
     check_canary();
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private(const ap_private<_AP_W1, _AP_S1, true>& that):pVal() {
+  HLS_CONSTEXPR AP_INLINE ap_private(const ap_private<_AP_W1, _AP_S1, true>& that):pVal() {
     set_canary();
     const uint64_t that_sign_ext_mask =
         (_AP_W1 == APINT_BITS_PER_WORD)
@@ -3484,7 +3484,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  INLINE ap_private(const volatile ap_private<_AP_W1, _AP_S1, true>& that) {
+  AP_INLINE ap_private(const volatile ap_private<_AP_W1, _AP_S1, true>& that) {
     set_canary();
     operator=(const_cast<const ap_private<_AP_W1, _AP_S1, true>&>(that));
     check_canary();
@@ -3492,8 +3492,8 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// @brief Destructor.
   // virtual ~ap_private() {}
-  //INLINE ~ap_private() { check_canary(); }  //double check
-  INLINE ~ap_private() = default;
+  //AP_INLINE ~ap_private() { check_canary(); }  //double check
+  AP_INLINE ~ap_private() = default;
 
   /// @name Constructors
   /// @{
@@ -3507,8 +3507,8 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     check_canary();
   }
 
-  INLINE ap_private(uint64_t* val, uint32_t bits = _AP_W) { assert(0); }
-  INLINE ap_private(const uint64_t* const val, uint32_t bits) { assert(0); }
+  AP_INLINE ap_private(uint64_t* val, uint32_t bits = _AP_W) { assert(0); }
+  AP_INLINE ap_private(const uint64_t* const val, uint32_t bits) { assert(0); }
 
 /// If isSigned is true then val is treated as if it were a signed value
 /// (i.e. as an int64_t) and the appropriate sign extension to the bit width
@@ -3519,7 +3519,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 /// @param isSigned how to treat signedness of val
 /// @brief Create a new ap_private of numBits width, initialized as val.
 #define CTOR(TYPE, SIGNED)                                  \
-  INLINE ap_private(TYPE val, bool isSigned = SIGNED):pVal() {     \
+  AP_INLINE ap_private(TYPE val, bool isSigned = SIGNED):pVal() {     \
     set_canary();                                           \
     pVal[0] = (ValType)val;                                 \
     if (isSigned && int64_t(pVal[0]) < 0) {                 \
@@ -3550,11 +3550,11 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// @returns true if the number of bits <= 64, false otherwise.
   /// @brief Determine if this ap_private just has one word to store value.
-  HLS_CONSTEXPR INLINE bool isSingleWord() const { return false; }
+  HLS_CONSTEXPR AP_INLINE bool isSingleWord() const { return false; }
 
   /// @returns the word position for the specified bit position.
   /// @brief Determine which word a bit is in.
-  HLS_CONSTEXPR static INLINE uint32_t whichWord(uint32_t bitPosition) {
+  HLS_CONSTEXPR static AP_INLINE uint32_t whichWord(uint32_t bitPosition) {
     //    return bitPosition / APINT_BITS_PER_WORD;
     return (bitPosition) >> 6;
   }
@@ -3562,7 +3562,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns the bit position in a word for the specified bit position
   /// in the ap_private.
   /// @brief Determine which bit in a word a bit is in.
-  HLS_CONSTEXPR static INLINE uint32_t whichBit(uint32_t bitPosition) {
+  HLS_CONSTEXPR static AP_INLINE uint32_t whichBit(uint32_t bitPosition) {
     //    return bitPosition % APINT_BITS_PER_WORD;
     return bitPosition & 0x3f;
   }
@@ -3571,13 +3571,13 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// corresponding word.
   /// @returns a uint64_t with only bit at "whichBit(bitPosition)" set
   /// @brief Get a single bit mask.
-  HLS_CONSTEXPR static INLINE uint64_t maskBit(uint32_t bitPosition) {
+  HLS_CONSTEXPR static AP_INLINE uint64_t maskBit(uint32_t bitPosition) {
     return 1ULL << (whichBit(bitPosition));
   }
 
   /// @returns the corresponding word for the specified bit position.
   /// @brief Get the word corresponding to a bit position
-  HLS_CONSTEXPR INLINE uint64_t getWord(uint32_t bitPosition) const {
+  HLS_CONSTEXPR AP_INLINE uint64_t getWord(uint32_t bitPosition) const {
     return pVal[whichWord(bitPosition)];
   }
 
@@ -3586,7 +3586,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// significant word is assigned a value to ensure that those bits are
   /// zero'd out.
   /// @brief Clear unused high order bits
-  HLS_CONSTEXPR INLINE void clearUnusedBits(void)
+  HLS_CONSTEXPR AP_INLINE void clearUnusedBits(void)
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -3607,7 +3607,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 #endif
   }
 
-  INLINE void clearUnusedBits(void) volatile
+  AP_INLINE void clearUnusedBits(void) volatile
 // just for clang compiler 3.8 and above
 #if defined(__clang__) && (__clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8))
       __attribute__((no_sanitize("undefined")))
@@ -3620,13 +3620,13 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
                      : pVal[_AP_N - 1]);
   }
 
-  INLINE void clearUnusedBitsToZero(void) { pVal[_AP_N - 1] &= mask; }
+  AP_INLINE void clearUnusedBitsToZero(void) { pVal[_AP_N - 1] &= mask; }
 
-  INLINE void clearUnusedBitsToOne(void) { pVal[_AP_N - 1] |= mask; }
+  AP_INLINE void clearUnusedBitsToOne(void) { pVal[_AP_N - 1] |= mask; }
 
   /// This is used by the constructors that take string arguments.
   /// @brief Convert a char array into an ap_private
-  INLINE void fromString(const char* str, uint32_t slen, uint8_t radix) {
+  AP_INLINE void fromString(const char* str, uint32_t slen, uint8_t radix) {
     enum { numbits = _AP_W };
     bool isNeg = str[0] == '-';
     if (isNeg) {
@@ -3733,44 +3733,44 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     clearUnusedBits();
   }
 
-  INLINE ap_private read() volatile { return *this; }
+  AP_INLINE ap_private read() volatile { return *this; }
 
-  INLINE void write(const ap_private& op2) volatile { *this = (op2); }
+  AP_INLINE void write(const ap_private& op2) volatile { *this = (op2); }
 
-  HLS_CONSTEXPR INLINE operator ValType() const { return get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE operator ValType() const { return get_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_uchar() const { return (unsigned char)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_uchar() const { return (unsigned char)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_char() const { return (signed char)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_char() const { return (signed char)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_ushort() const { return (unsigned short)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_ushort() const { return (unsigned short)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_short() const { return (short)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_short() const { return (short)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE int to_int() const { return (int)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE int to_int() const { return (int)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE unsigned to_uint() const { return (unsigned)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE unsigned to_uint() const { return (unsigned)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE long to_long() const { return (long)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE long to_long() const { return (long)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE unsigned long to_ulong() const { return (unsigned long)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE unsigned long to_ulong() const { return (unsigned long)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE ap_slong to_int64() const { return (ap_slong)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE ap_slong to_int64() const { return (ap_slong)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE ap_ulong to_uint64() const { return (ap_ulong)get_VAL(); }
+  HLS_CONSTEXPR AP_INLINE ap_ulong to_uint64() const { return (ap_ulong)get_VAL(); }
 
-  HLS_CONSTEXPR INLINE double to_double() const {
+  HLS_CONSTEXPR AP_INLINE double to_double() const {
     if (isNegative())
       return roundToDouble(true);
     else
       return roundToDouble(false);
   }
 
-  HLS_CONSTEXPR INLINE unsigned length() const { return _AP_W; }
+  HLS_CONSTEXPR AP_INLINE unsigned length() const { return _AP_W; }
 
   /*Reverse the contents of ap_private instance. I.e. LSB becomes MSB and vise
    * versa*/
-  INLINE ap_private& reverse() {
+  AP_INLINE ap_private& reverse() {
     for (int i = 0; i < _AP_W / 2; ++i) {
       bool tmp = operator[](i);
       if (operator[](_AP_W - 1 - i))
@@ -3787,65 +3787,65 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   /*Return true if the value of ap_private instance is zero*/
-  HLS_CONSTEXPR INLINE bool iszero() const { return isMinValue(); }
+  HLS_CONSTEXPR AP_INLINE bool iszero() const { return isMinValue(); }
 
-  HLS_CONSTEXPR INLINE bool to_bool() const { return !iszero(); }
+  HLS_CONSTEXPR AP_INLINE bool to_bool() const { return !iszero(); }
 
   /* x < 0 */
-  HLS_CONSTEXPR INLINE bool sign() const {
+  HLS_CONSTEXPR AP_INLINE bool sign() const {
     if (isNegative()) return true;
     return false;
   }
 
   /* x[i] = !x[i] */
-  INLINE void invert(int i) {
+  AP_INLINE void invert(int i) {
     assert(i >= 0 && "Attempting to read bit with negative index");
     assert(i < _AP_W && "Attempting to read bit beyond MSB");
     flip(i);
   }
 
   /* x[i] */
-  INLINE bool test(int i) const {
+  AP_INLINE bool test(int i) const {
     assert(i >= 0 && "Attempting to read bit with negative index");
     assert(i < _AP_W && "Attempting to read bit beyond MSB");
     return operator[](i);
   }
 
   // Set the ith bit into v
-  INLINE void set(int i, bool v) {
+  AP_INLINE void set(int i, bool v) {
     assert(i >= 0 && "Attempting to write bit with negative index");
     assert(i < _AP_W && "Attempting to write bit beyond MSB");
     v ? set(i) : clear(i);
   }
 
   // Set the ith bit into v
-  INLINE void set_bit(int i, bool v) {
+  AP_INLINE void set_bit(int i, bool v) {
     assert(i >= 0 && "Attempting to write bit with negative index");
     assert(i < _AP_W && "Attempting to write bit beyond MSB");
     v ? set(i) : clear(i);
   }
 
   // FIXME different argument for different action?
-  INLINE ap_private& set(uint32_t bitPosition) {
+  AP_INLINE ap_private& set(uint32_t bitPosition) {
     pVal[whichWord(bitPosition)] |= maskBit(bitPosition);
     clearUnusedBits();
     return *this;
   }
 
-  INLINE void set() {
+  AP_INLINE void set() {
     for (int i = 0; i < _AP_N; ++i) pVal[i] = ~0ULL;
     clearUnusedBits();
   }
 
   // Get the value of ith bit
-  INLINE bool get(int i) const {
+  AP_INLINE bool get(int i) const {
     assert(i >= 0 && "Attempting to read bit with negative index");
     assert(i < _AP_W && "Attempting to read bit beyond MSB");
     return ((maskBit(i) & (pVal[whichWord(i)])) != 0);
   }
 
   // Get the value of ith bit
-  INLINE bool get_bit(int i) const {
+  AP_INLINE bool get_bit(int i) const {
     assert(i >= 0 && "Attempting to read bit with negative index");
     assert(i < _AP_W && "Attempting to read bit beyond MSB");
     return ((maskBit(i) & (pVal[whichWord(i)])) != 0);
@@ -3853,7 +3853,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   // This is used for sc_lv and sc_bv, which is implemented by sc_uint
   // Rotate an ap_private object n places to the left
-  INLINE void lrotate(int n) {
+  AP_INLINE void lrotate(int n) {
     assert(n >= 0 && "Attempting to shift negative index");
     assert(n < _AP_W && "Shift value larger than bit width");
     operator=(shl(n) | lshr(_AP_W - n));
@@ -3861,7 +3861,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   // This is used for sc_lv and sc_bv, which is implemented by sc_uint
   // Rotate an ap_private object n places to the right
-  INLINE void rrotate(int n) {
+  AP_INLINE void rrotate(int n) {
     assert(n >= 0 && "Attempting to shift negative index");
     assert(n < _AP_W && "Shift value larger than bit width");
     operator=(lshr(n) | shl(_AP_W - n));
@@ -3869,14 +3869,14 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Set the given bit to 0 whose position is given as "bitPosition".
   /// @brief Set a given bit to 0.
-  INLINE ap_private& clear(uint32_t bitPosition) {
+  AP_INLINE ap_private& clear(uint32_t bitPosition) {
     pVal[whichWord(bitPosition)] &= ~maskBit(bitPosition);
     clearUnusedBits();
     return *this;
   }
 
   /// @brief Set every bit to 0.
-  INLINE void clear() { memset(pVal, 0, _AP_N * APINT_WORD_SIZE); }
+  AP_INLINE void clear() { memset(pVal, 0, _AP_N * APINT_WORD_SIZE); }
 
   /// @brief Toggle every bit to its opposite value.
   HLS_CONSTEXPR ap_private& flip() {
@@ -3886,21 +3886,21 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   /// @brief Toggles a given bit to its opposite value.
-  INLINE ap_private& flip(uint32_t bitPosition) {
+  AP_INLINE ap_private& flip(uint32_t bitPosition) {
     assert(bitPosition < BitWidth && "Out of the bit-width range!");
     set_bit(bitPosition, !get_bit(bitPosition));
     return *this;
   }
 
   // complements every bit
-  HLS_CONSTEXPR INLINE void b_not() { flip(); }
+  HLS_CONSTEXPR AP_INLINE void b_not() { flip(); }
 
-  HLS_CONSTEXPR INLINE ap_private getLoBits(uint32_t numBits) const {
+  HLS_CONSTEXPR AP_INLINE ap_private getLoBits(uint32_t numBits) const {
     return ap_private_ops::lshr(ap_private_ops::shl(*this, _AP_W - numBits),
                                 _AP_W - numBits);
   }
 
-  HLS_CONSTEXPR INLINE ap_private getHiBits(uint32_t numBits) const {
+  HLS_CONSTEXPR AP_INLINE ap_private getHiBits(uint32_t numBits) const {
     return ap_private_ops::lshr(*this, _AP_W - numBits);
   }
 
@@ -3908,19 +3908,19 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   //-----------------------------------------------------------
 
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator&(
+//  AP_INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator&(
 //      const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
 //    return *this & a2.get();
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator|(
+//  AP_INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator|(
 //      const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
 //    return *this | a2.get();
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator^(
+//  AP_INLINE ap_private<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator^(
 //      const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
 //    return *this ^ a2.get();
 //  }
@@ -3930,7 +3930,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
 #define OP_BIN_LOGIC_ASSIGN_AP(Sym)                                            \
   template <int _AP_W1, bool _AP_S1>                                           \
-  HLS_CONSTEXPR INLINE ap_private& operator Sym(const ap_private<_AP_W1, _AP_S1>& RHS) {     \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator Sym(const ap_private<_AP_W1, _AP_S1>& RHS) {     \
     const int _AP_N1 = ap_private<_AP_W1, _AP_S1>::_AP_N;                      \
     uint32_t numWords = AESL_std::min((int)_AP_N, _AP_N1);                     \
     uint32_t i = 0;                                                                \
@@ -3955,7 +3955,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns this, after addition of RHS.
   /// @brief Addition assignment operator.
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator+=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator+=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     const int _AP_N1 = ap_private<_AP_W1, _AP_S1>::_AP_N;
     uint64_t RHSpVal[_AP_N1] = {0};
     for (int i = 0; i < _AP_N1; ++i) RHSpVal[i] = RHS.get_pVal(i);
@@ -3966,7 +3966,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator-=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator-=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     const int _AP_N1 = ap_private<_AP_W1, _AP_S1>::_AP_N;
     uint64_t RHSpVal[_AP_N1] = {0};
     for (int i = 0; i < _AP_N1; ++i) RHSpVal[i] = RHS.get_pVal(i);
@@ -3977,7 +3977,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator*=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator*=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     // Get some bit facts about LHS and check for zero
     uint32_t lhsBits = getActiveBits();
     uint32_t lhsWords = !lhsBits ? 0 : whichWord(lhsBits - 1) + 1;
@@ -4021,7 +4021,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
 #define OP_ASSIGN_AP(Sym)                                                    \
   template <int _AP_W2, bool _AP_S2>                                         \
-  INLINE ap_private& operator Sym##=(const ap_private<_AP_W2, _AP_S2>& op) { \
+  AP_INLINE ap_private& operator Sym##=(const ap_private<_AP_W2, _AP_S2>& op) { \
     *this = operator Sym(op);                                                \
     return *this;                                                            \
   }
@@ -4032,7 +4032,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
 #define OP_BIN_LOGIC_AP(Sym)                                                  \
   template <int _AP_W1, bool _AP_S1>                                          \
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::logic operator Sym(                  \
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::logic operator Sym(                  \
       const ap_private<_AP_W1, _AP_S1>& RHS) const {                          \
     enum {                                                                    \
       numWords = (RType<_AP_W1, _AP_S1>::logic_w + APINT_BITS_PER_WORD - 1) / \
@@ -4073,7 +4073,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 #undef OP_BIN_LOGIC_AP
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::plus operator+(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::plus operator+(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     typename RType<_AP_W1, _AP_S1>::plus Result(0), lhs(*this), rhs(RHS);
     const int Result_AP_N = (RType<_AP_W1, _AP_S1>::plus_w + 63) / 64;
@@ -4084,7 +4084,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::minus operator-(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::minus operator-(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     typename RType<_AP_W1, _AP_S1>::minus Result(0), lhs(*this), rhs(RHS);
     const int Result_AP_N = (RType<_AP_W1, _AP_S1>::minus_w + 63) / 64;
@@ -4095,7 +4095,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W1, _AP_S1>::mult operator*(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W1, _AP_S1>::mult operator*(
       const ap_private<_AP_W1, _AP_S1>& RHS) const {
     typename RType<_AP_W1, _AP_S1>::mult temp = *this;
     temp *= RHS;
@@ -4103,7 +4103,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W2, _AP_S2>::div operator/(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W2, _AP_S2>::div operator/(
       const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<AP_MAX(_AP_W + (_AP_S || _AP_S2), _AP_W2 + (_AP_S || _AP_S2)),
                (_AP_W > _AP_W2 ? _AP_S
@@ -4118,7 +4118,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE typename RType<_AP_W2, _AP_S2>::mod operator%(
+  HLS_CONSTEXPR AP_INLINE typename RType<_AP_W2, _AP_S2>::mod operator%(
       const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<AP_MAX(_AP_W + (_AP_S || _AP_S2), _AP_W2 + (_AP_S || _AP_S2)),
                (_AP_W > _AP_W2 ? _AP_S
@@ -4135,7 +4135,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
 #define OP_LEFT_SHIFT_CTYPE(TYPE, SIGNED)             \
-  INLINE ap_private operator<<(const TYPE op) const { \
+  AP_INLINE ap_private operator<<(const TYPE op) const { \
     if (op >= _AP_W) return ap_private(0);            \
     if (SIGNED && op < 0) return *this >> (0 - op);   \
     return shl(op);                                   \
@@ -4158,7 +4158,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 #undef OP_LEFT_SHIFT_CTYPE
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE ap_private operator<<(const ap_private<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE ap_private operator<<(const ap_private<_AP_W2, _AP_S2>& op2) const {
     if (_AP_S2 == false) {
       uint32_t sh = op2.to_uint();
       return *this << sh;
@@ -4169,7 +4169,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
 #define OP_RIGHT_SHIFT_CTYPE(TYPE, SIGNED)            \
-  INLINE ap_private operator>>(const TYPE op) const { \
+  AP_INLINE ap_private operator>>(const TYPE op) const { \
     if (op >= _AP_W) {                                \
       if (isNegative())                               \
         return ap_private(-1);                        \
@@ -4201,7 +4201,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 #undef OP_RIGHT_SHIFT_CTYPE
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE ap_private operator>>(const ap_private<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE ap_private operator>>(const ap_private<_AP_W2, _AP_S2>& op2) const {
     if (_AP_S2 == false) {
       uint32_t sh = op2.to_uint();
       return *this >> sh;
@@ -4216,16 +4216,16 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   // TODO call clearUnusedBits ?
 #define OP_ASSIGN_AP(Sym)                                                    \
   template <int _AP_W2, bool _AP_S2>                                         \
-  HLS_CONSTEXPR INLINE ap_private& operator Sym##=(int op) {                               \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator Sym##=(int op) {                               \
     *this = operator Sym(op);                                                \
     return *this;                                                            \
   }                                                                          \
-  HLS_CONSTEXPR INLINE ap_private& operator Sym##=(unsigned int op) {                      \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator Sym##=(unsigned int op) {                      \
     *this = operator Sym(op);                                                \
     return *this;                                                            \
   }                                                                          \
   template <int _AP_W2, bool _AP_S2>                                         \
-  HLS_CONSTEXPR INLINE ap_private& operator Sym##=(const ap_private<_AP_W2, _AP_S2>& op) { \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator Sym##=(const ap_private<_AP_W2, _AP_S2>& op) { \
     *this = operator Sym(op);                                                \
     return *this;                                                            \
   }
@@ -4235,7 +4235,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Comparisons
   //-----------------------------------------------------------------
-  HLS_CONSTEXPR INLINE bool operator==(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool operator==(const ap_private& RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private RHS_(RHS);
@@ -4259,7 +4259,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator==(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator==(const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
 
@@ -4274,7 +4274,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     return lhs == rhs;
   }
 
-  HLS_CONSTEXPR INLINE bool operator==(uint64_t Val) const {
+  HLS_CONSTEXPR AP_INLINE bool operator==(uint64_t Val) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
 
@@ -4286,28 +4286,28 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator!=(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator!=(const ap_private<_AP_W2, _AP_S2>& op) const {
     return !(*this == op);
   }
 
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool operator!=(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool operator!=(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return !((*this) == RHS);
   }
 
-  HLS_CONSTEXPR INLINE bool operator!=(uint64_t Val) const { return !((*this) == Val); }
+  HLS_CONSTEXPR AP_INLINE bool operator!=(uint64_t Val) const { return !((*this) == Val); }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator<=(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator<=(const ap_private<_AP_W2, _AP_S2>& op) const {
     return !(*this > op);
   }
 
-  HLS_CONSTEXPR INLINE bool operator<(const ap_private& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator<(const ap_private& op) const {
     return _AP_S ? slt(op) : ult(op);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator<(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator<(const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
 
@@ -4333,16 +4333,16 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator>=(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator>=(const ap_private<_AP_W2, _AP_S2>& op) const {
     return !(*this < op);
   }
 
-  HLS_CONSTEXPR INLINE bool operator>(const ap_private& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator>(const ap_private& op) const {
     return _AP_S ? sgt(op) : ugt(op);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE bool operator>(const ap_private<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR AP_INLINE bool operator>(const ap_private<_AP_W2, _AP_S2>& op) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
 
@@ -4369,26 +4369,26 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Bit and Part Select
   //--------------------------------------------------------------
-  INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) {
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) {
     return _private_range_ref<_AP_W, _AP_S>(this, Hi, Lo);
   }
 
-  INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) const {
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) const {
     return _private_range_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>*>(this), Hi, Lo);
   }
 
-  INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) const {
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) const {
     return _private_range_ref<_AP_W, _AP_S>(
         (const_cast<ap_private<_AP_W, _AP_S>*>(this)), Hi, Lo);
   }
 
-  INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) {
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) {
     return _private_range_ref<_AP_W, _AP_S>(this, Hi, Lo);
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE _private_range_ref<_AP_W, _AP_S> range(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> range(
       const ap_private<_AP_W2, _AP_S2>& HiIdx,
       const ap_private<_AP_W3, _AP_S3>& LoIdx) {
     int Hi = HiIdx.to_int();
@@ -4397,7 +4397,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE _private_range_ref<_AP_W, _AP_S> operator()(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> operator()(
       const ap_private<_AP_W2, _AP_S2>& HiIdx,
       const ap_private<_AP_W3, _AP_S3>& LoIdx) {
     int Hi = HiIdx.to_int();
@@ -4406,7 +4406,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE _private_range_ref<_AP_W, _AP_S> range(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> range(
       const ap_private<_AP_W2, _AP_S2>& HiIdx,
       const ap_private<_AP_W3, _AP_S3>& LoIdx) const {
     int Hi = HiIdx.to_int();
@@ -4415,7 +4415,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE _private_range_ref<_AP_W, _AP_S> operator()(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S> operator()(
       const ap_private<_AP_W2, _AP_S2>& HiIdx,
       const ap_private<_AP_W3, _AP_S3>& LoIdx) const {
     int Hi = HiIdx.to_int();
@@ -4423,51 +4423,51 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     return this->range(Hi, Lo);
   }
 
-  INLINE _private_bit_ref<_AP_W, _AP_S> operator[](int index) {
+  AP_INLINE _private_bit_ref<_AP_W, _AP_S> operator[](int index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_bit_ref<_AP_W, _AP_S> operator[](
+  AP_INLINE _private_bit_ref<_AP_W, _AP_S> operator[](
       const ap_private<_AP_W2, _AP_S2>& index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index.to_int());
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](
+  AP_INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](
       const ap_private<_AP_W2, _AP_S2>& index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index.to_int());
   }
 
-  INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](int index) const {
+  AP_INLINE const _private_bit_ref<_AP_W, _AP_S> operator[](int index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index);
   }
 
-  INLINE _private_bit_ref<_AP_W, _AP_S> bit(int index) {
+  AP_INLINE _private_bit_ref<_AP_W, _AP_S> bit(int index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_bit_ref<_AP_W, _AP_S> bit(const ap_private<_AP_W2, _AP_S2>& index) {
+  AP_INLINE _private_bit_ref<_AP_W, _AP_S> bit(const ap_private<_AP_W2, _AP_S2>& index) {
     return _private_bit_ref<_AP_W, _AP_S>(*this, index.to_int());
   }
 
-  INLINE const _private_bit_ref<_AP_W, _AP_S> bit(int index) const {
+  AP_INLINE const _private_bit_ref<_AP_W, _AP_S> bit(int index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE const _private_bit_ref<_AP_W, _AP_S> bit(
+  AP_INLINE const _private_bit_ref<_AP_W, _AP_S> bit(
       const ap_private<_AP_W2, _AP_S2>& index) const {
     return _private_bit_ref<_AP_W, _AP_S>(
         const_cast<ap_private<_AP_W, _AP_S>&>(*this), index.to_int());
   }
 
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       ap_private<_AP_W2, _AP_S2> >
 //  concat(ap_private<_AP_W2, _AP_S2>& a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -4475,7 +4475,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       ap_private<_AP_W2, _AP_S2> >
 //  concat(const ap_private<_AP_W2, _AP_S2>& a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -4485,14 +4485,14 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(ap_private<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(*this, a2);
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(ap_private<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(
@@ -4500,7 +4500,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(const ap_private<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(
@@ -4508,7 +4508,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private, _AP_W2, ap_private<_AP_W2, _AP_S2> >
 //  operator,(const ap_private<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(
@@ -4517,7 +4517,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       _private_range_ref<_AP_W2, _AP_S2> >
 //  operator,(const _private_range_ref<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -4527,7 +4527,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
 //                       _private_range_ref<_AP_W2, _AP_S2> >
 //  operator,(_private_range_ref<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2,
@@ -4535,7 +4535,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
 //                       _private_bit_ref<_AP_W2, _AP_S2> >
 //  operator,(const _private_bit_ref<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
@@ -4545,7 +4545,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
 //                       _private_bit_ref<_AP_W2, _AP_S2> >
 //  operator,(_private_bit_ref<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, 1,
@@ -4553,7 +4553,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
 //                       ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
 //  operator,(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) const {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
@@ -4563,7 +4563,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
+//  AP_INLINE ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
 //                       ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
 //  operator,(ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) {
 //    return ap_concat_ref<_AP_W, ap_private<_AP_W, _AP_S>, _AP_W2 + _AP_W3,
@@ -4573,7 +4573,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_concat_ref<
+//  AP_INLINE ap_concat_ref<
 //      _AP_W, ap_private, _AP_W2,
 //      af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //  operator,(const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>
@@ -4588,7 +4588,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_concat_ref<
+//  AP_INLINE ap_concat_ref<
 //      _AP_W, ap_private, _AP_W2,
 //      af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //  operator,(af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> &a2) {
@@ -4600,7 +4600,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_W, ap_private, 1,
 //                    af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //      operator,(const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>
@@ -4615,7 +4615,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_W, ap_private, 1,
 //                    af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //      operator,(
@@ -4625,13 +4625,13 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 //        af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >(*this, a2);
 //  }
 
-  HLS_CONSTEXPR INLINE ap_private<_AP_W, false> get() const {
+  HLS_CONSTEXPR AP_INLINE ap_private<_AP_W, false> get() const {
     ap_private<_AP_W, false> ret(*this);
     return ret;
   }
 
   template <int _AP_W3>
-  INLINE void set(const ap_private<_AP_W3, false>& val) {
+  AP_INLINE void set(const ap_private<_AP_W3, false>& val) {
     operator=(ap_private<_AP_W3, _AP_S>(val));
   }
 
@@ -4641,7 +4641,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// This tests the high bit of this ap_private to determine if it is set.
   /// @returns true if this ap_private is negative, false otherwise
   /// @brief Determine sign of this ap_private.
-  HLS_CONSTEXPR INLINE bool isNegative() const {
+  HLS_CONSTEXPR AP_INLINE bool isNegative() const {
     // just for get rid of warnings
     enum { shift = (_AP_W - APINT_BITS_PER_WORD * (_AP_N - 1) - 1) };
     //static const uint64_t mask = 1ULL << (shift);
@@ -4651,48 +4651,48 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// This tests the high bit of the ap_private to determine if it is unset.
   /// @brief Determine if this ap_private Value is positive (not negative).
-  HLS_CONSTEXPR INLINE bool isPositive() const { return !isNegative(); }
+  HLS_CONSTEXPR AP_INLINE bool isPositive() const { return !isNegative(); }
 
   /// This tests if the value of this ap_private is strictly positive (> 0).
   /// @returns true if this ap_private is Positive and not zero.
   /// @brief Determine if this ap_private Value is strictly positive.
-  HLS_CONSTEXPR INLINE bool isStrictlyPositive() const {
+  HLS_CONSTEXPR AP_INLINE bool isStrictlyPositive() const {
     return isPositive() && (*this) != 0;
   }
 
   /// This checks to see if the value has all bits of the ap_private are set or
   /// not.
   /// @brief Determine if all bits are set
-  INLINE bool isAllOnesValue() const { return countPopulation() == _AP_W; }
+  AP_INLINE bool isAllOnesValue() const { return countPopulation() == _AP_W; }
 
   /// This checks to see if the value of this ap_private is the maximum unsigned
   /// value for the ap_private's bit width.
   /// @brief Determine if this is the largest unsigned value.
-  INLINE bool isMaxValue() const { return countPopulation() == _AP_W; }
+  AP_INLINE bool isMaxValue() const { return countPopulation() == _AP_W; }
 
   /// This checks to see if the value of this ap_private is the maximum signed
   /// value for the ap_private's bit width.
   /// @brief Determine if this is the largest signed value.
-  INLINE bool isMaxSignedValue() const {
+  AP_INLINE bool isMaxSignedValue() const {
     return !isNegative() && countPopulation() == _AP_W - 1;
   }
 
   /// This checks to see if the value of this ap_private is the minimum unsigned
   /// value for the ap_private's bit width.
   /// @brief Determine if this is the smallest unsigned value.
-  HLS_CONSTEXPR INLINE bool isMinValue() const { return countPopulation() == 0; }
+  HLS_CONSTEXPR AP_INLINE bool isMinValue() const { return countPopulation() == 0; }
 
   /// This checks to see if the value of this ap_private is the minimum signed
   /// value for the ap_private's bit width.
   /// @brief Determine if this is the smallest signed value.
-  INLINE bool isMinSignedValue() const {
+  AP_INLINE bool isMinSignedValue() const {
     return isNegative() && countPopulation() == 1;
   }
 
   /// This function returns a pointer to the internal storage of the ap_private.
   /// This is useful for writing out the ap_private in binary form without any
   /// conversions.
-  HLS_CONSTEXPR INLINE const uint64_t* getRawData() const { return &pVal[0]; }
+  HLS_CONSTEXPR AP_INLINE const uint64_t* getRawData() const { return &pVal[0]; }
 
   // Square Root - this method computes and returns the square root of "this".
   // Three mechanisms are used for computation. For small values (<= 5 bits),
@@ -4701,7 +4701,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   // the libc sqrt function is called. The result is rounded and then converted
   // back to a uint64_t which is then used to construct the result. Finally,
   // the Babylonian method for computing square roots is used.
-  INLINE ap_private sqrt() const {
+  AP_INLINE ap_private sqrt() const {
     // Determine the magnitude of the value.
     uint32_t magnitude = getActiveBits();
 
@@ -4789,31 +4789,31 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   ///
   /// @returns *this after assignment of RHS.
   /// @brief Copy assignment operator.
-  HLS_CONSTEXPR INLINE ap_private& operator=(const ap_private& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator=(const ap_private& RHS) {
     if (this != &RHS)
       for (int i = 0; i < _AP_N; ++i) pVal[i] = RHS.get_pVal(i);
     clearUnusedBits();
     return *this;
   }
-  INLINE ap_private& operator=(const volatile ap_private& RHS) {
+  AP_INLINE ap_private& operator=(const volatile ap_private& RHS) {
     if (this != &RHS)
       for (int i = 0; i < _AP_N; ++i) pVal[i] = RHS.get_pVal(i);
     clearUnusedBits();
     return *this;
   }
-  INLINE void operator=(const ap_private& RHS) volatile {
+  AP_INLINE void operator=(const ap_private& RHS) volatile {
     if (this != &RHS)
       for (int i = 0; i < _AP_N; ++i) pVal[i] = RHS.get_pVal(i);
     clearUnusedBits();
   }
-  INLINE void operator=(const volatile ap_private& RHS) volatile {
+  AP_INLINE void operator=(const volatile ap_private& RHS) volatile {
     if (this != &RHS)
       for (int i = 0; i < _AP_N; ++i) pVal[i] = RHS.get_pVal(i);
     clearUnusedBits();
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private& operator=(const ap_private<_AP_W1, _AP_S1>& RHS) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator=(const ap_private<_AP_W1, _AP_S1>& RHS) {
     if (_AP_S1)
       cpSextOrTrunc(RHS);
     else
@@ -4823,7 +4823,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  INLINE ap_private& operator=(const volatile ap_private<_AP_W1, _AP_S1>& RHS) {
+  AP_INLINE ap_private& operator=(const volatile ap_private<_AP_W1, _AP_S1>& RHS) {
     if (_AP_S1)
       cpSextOrTrunc(RHS);
     else
@@ -4833,14 +4833,14 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE ap_private& operator=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     *this = ap_private<_AP_W2, false>(op2);
     return *this;
   }
 
 #if 0
     template<int _AP_W1, bool _AP_S1>
-    INLINE ap_private& operator=(const ap_private<_AP_W1, _AP_S1, true>& RHS) {
+    AP_INLINE ap_private& operator=(const ap_private<_AP_W1, _AP_S1, true>& RHS) {
         static const uint64_t that_sign_ext_mask = (_AP_W1==APINT_BITS_PER_WORD)?0:~0ULL>>(_AP_W1%APINT_BITS_PER_WORD)<<(_AP_W1%APINT_BITS_PER_WORD);
         if (RHS.isNegative()) {
             pVal[0] = RHS.get_VAL() | that_sign_ext_mask;
@@ -4854,7 +4854,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     }
 
     template<int _AP_W1, bool _AP_S1>
-    INLINE ap_private& operator=(const volatile ap_private<_AP_W1, _AP_S1, true>& RHS) {
+    AP_INLINE ap_private& operator=(const volatile ap_private<_AP_W1, _AP_S1, true>& RHS) {
         static const uint64_t that_sign_ext_mask = (_AP_W1==APINT_BITS_PER_WORD)?0:~0ULL>>(_AP_W1%APINT_BITS_PER_WORD)<<(_AP_W1%APINT_BITS_PER_WORD);
         if (RHS.isNegative()) {
             pVal[0] = RHS.get_VAL() | that_sign_ext_mask;
@@ -4870,7 +4870,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
 /// from all c types.
 #define ASSIGN_OP_FROM_INT(C_TYPE, _AP_W2, _AP_S2) \
-  HLS_CONSTEXPR INLINE ap_private& operator=(const C_TYPE rhs) { \
+  HLS_CONSTEXPR AP_INLINE ap_private& operator=(const C_TYPE rhs) { \
     ap_private<(_AP_W2), (_AP_S2)> tmp = rhs;      \
     operator=(tmp);                                \
     return *this;                                  \
@@ -4892,7 +4892,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// from c string.
   // XXX this is a must, to prevent pointer being converted to bool.
-  INLINE ap_private& operator=(const char* s) {
+  AP_INLINE ap_private& operator=(const char* s) {
     ap_private tmp(s); // XXX direct initialization, as ctor is explicit.
     operator=(tmp);
     return *this;
@@ -4903,7 +4903,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   ///
   /// @returns a new ap_private value representing *this incremented by one
   /// @brief Postfix increment operator.
-  HLS_CONSTEXPR INLINE const ap_private operator++(int) {
+  HLS_CONSTEXPR AP_INLINE const ap_private operator++(int) {
     ap_private API(*this);
     ++(*this);
     return API;
@@ -4911,7 +4911,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// @returns *this incremented by one
   /// @brief Prefix increment operator.
-  HLS_CONSTEXPR INLINE ap_private& operator++() {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator++() {
     ap_private_ops::add_1(pVal, pVal, _AP_N, 1);
     clearUnusedBits();
     return *this;
@@ -4919,7 +4919,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// @returns a new ap_private representing *this decremented by one.
   /// @brief Postfix decrement operator.
-  HLS_CONSTEXPR INLINE const ap_private operator--(int) {
+  HLS_CONSTEXPR AP_INLINE const ap_private operator--(int) {
     ap_private API(*this);
     --(*this);
     return API;
@@ -4927,7 +4927,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// @returns *this decremented by one.
   /// @brief Prefix decrement operator.
-  HLS_CONSTEXPR INLINE ap_private& operator--() {
+  HLS_CONSTEXPR AP_INLINE ap_private& operator--() {
     ap_private_ops::sub_1(pVal, _AP_N, 1);
     clearUnusedBits();
     return *this;
@@ -4936,7 +4936,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// Performs a bitwise complement operation on this ap_private.
   /// @returns an ap_private that is the bitwise complement of *this
   /// @brief Unary bitwise complement operator.
-  HLS_CONSTEXPR INLINE ap_private<_AP_W + !_AP_S, true> operator~() const {
+  HLS_CONSTEXPR AP_INLINE ap_private<_AP_W + !_AP_S, true> operator~() const {
     ap_private<_AP_W + !_AP_S, true> Result(*this);
     Result.flip();
     return Result;
@@ -4945,40 +4945,40 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// Negates *this using two's complement logic.
   /// @returns An ap_private value representing the negation of *this.
   /// @brief Unary negation operator
-  HLS_CONSTEXPR INLINE typename RType<1, false>::minus operator-() const {
+  HLS_CONSTEXPR AP_INLINE typename RType<1, false>::minus operator-() const {
     return ap_private<1, false>(0) - (*this);
   }
 
   /// Performs logical negation operation on this ap_private.
   /// @returns true if *this is zero, false otherwise.
   /// @brief Logical negation operator.
-  HLS_CONSTEXPR INLINE bool operator!() const {
+  HLS_CONSTEXPR AP_INLINE bool operator!() const {
     for (int i = 0; i < _AP_N; ++i)
       if (pVal[i]) return false;
     return true;
   }
 
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private<_AP_W, _AP_S || _AP_S1> And(
+  HLS_CONSTEXPR AP_INLINE ap_private<_AP_W, _AP_S || _AP_S1> And(
       const ap_private<_AP_W, _AP_S1>& RHS) const {
     return this->operator&(RHS);
   }
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private Or(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Or(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return this->operator|(RHS);
   }
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE ap_private Xor(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Xor(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return this->operator^(RHS);
   }
 
-  HLS_CONSTEXPR INLINE ap_private Mul(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Mul(const ap_private& RHS) const {
     ap_private Result(*this);
     Result *= RHS;
     return Result;
   }
 
-  HLS_CONSTEXPR INLINE ap_private Add(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Add(const ap_private& RHS) const {
     ap_private Result(0);
     ap_private_ops::add(Result.get_pVal(), pVal, RHS.get_pVal(), _AP_N, _AP_N,
                         _AP_N, _AP_S, _AP_S);
@@ -4986,7 +4986,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     return Result;
   }
 
-  HLS_CONSTEXPR INLINE ap_private Sub(const ap_private& RHS) const {
+  HLS_CONSTEXPR AP_INLINE ap_private Sub(const ap_private& RHS) const {
     ap_private Result(0);
     ap_private_ops::sub(Result.get_pVal(), pVal, RHS.get_pVal(), _AP_N, _AP_N,
                         _AP_N, _AP_S, _AP_S);
@@ -4996,7 +4996,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Arithmetic right-shift this ap_private by shiftAmt.
   /// @brief Arithmetic right-shift function.
-  INLINE ap_private ashr(uint32_t shiftAmt) const {
+  AP_INLINE ap_private ashr(uint32_t shiftAmt) const {
     assert(shiftAmt <= BitWidth && "Invalid shift amount, too big");
     // Handle a degenerate case
     if (shiftAmt == 0) return ap_private(*this);
@@ -5070,7 +5070,8 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Logical right-shift this ap_private by shiftAmt.
   /// @brief Logical right-shift function.
-  HLS_CONSTEXPR INLINE ap_private lshr(uint32_t shiftAmt) const {
+  HLS_CONSTEXPR AP_INLINE ap_private lshr(uint32_t shiftAmt) const {
+    assert(shiftAmt <= BitWidth && "Invalid shift amount, too big");
     // If all the bits were shifted out, the result is 0. This avoids issues
     // with shifting by the size of the integer type, which produces undefined
     // results. We define these "undefined results" to always be 0.
@@ -5125,7 +5126,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Left-shift this ap_private by shiftAmt.
   /// @brief Left-shift function.
-  HLS_CONSTEXPR INLINE ap_private shl(uint32_t shiftAmt) const {
+  HLS_CONSTEXPR AP_INLINE ap_private shl(uint32_t shiftAmt) const {
     assert(shiftAmt <= BitWidth && "Invalid shift amount, too big");
     // If all the bits were shifted out, the result is 0. This avoids issues
     // with shifting by the size of the integer type, which produces undefined
@@ -5175,7 +5176,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     return Retval;
   }
 
-  INLINE ap_private rotl(uint32_t rotateAmt) const {
+  AP_INLINE ap_private rotl(uint32_t rotateAmt) const {
     if (rotateAmt == 0) return ap_private(*this);
     // Don't get too fancy, just use existing shift/or facilities
     ap_private hi(*this);
@@ -5185,7 +5186,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     return hi | lo;
   }
 
-  INLINE ap_private rotr(uint32_t rotateAmt) const {
+  AP_INLINE ap_private rotr(uint32_t rotateAmt) const {
     if (rotateAmt == 0) return ap_private(*this);
     // Don't get too fancy, just use existing shift/or facilities
     ap_private hi(*this);
@@ -5200,7 +5201,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// RHS are treated as unsigned quantities for purposes of this division.
   /// @returns a new ap_private value containing the division result
   /// @brief Unsigned division operation.
-  INLINE ap_private udiv(const ap_private& RHS) const {
+  AP_INLINE ap_private udiv(const ap_private& RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private RHS_(RHS);
@@ -5237,7 +5238,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Signed divide this ap_private by ap_private RHS.
   /// @brief Signed division function for ap_private.
-  INLINE ap_private sdiv(const ap_private& RHS) const {
+  AP_INLINE ap_private sdiv(const ap_private& RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private RHS_(RHS);
@@ -5261,7 +5262,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// which is *this.
   /// @returns a new ap_private value containing the remainder result
   /// @brief Unsigned remainder operation.
-  INLINE ap_private urem(const ap_private& RHS) const {
+  AP_INLINE ap_private urem(const ap_private& RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private RHS_(RHS);
@@ -5298,7 +5299,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     return Remainder;
   }
 
-  INLINE ap_private urem(uint64_t RHS) const {
+  AP_INLINE ap_private urem(uint64_t RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
 
@@ -5332,7 +5333,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Signed remainder operation on ap_private.
   /// @brief Function for signed remainder operation.
-  INLINE ap_private srem(const ap_private& RHS) const {
+  AP_INLINE ap_private srem(const ap_private& RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private RHS_(RHS);
@@ -5354,7 +5355,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// Signed remainder operation on ap_private.
   /// @brief Function for signed remainder operation.
-  INLINE ap_private srem(int64_t RHS) const {
+  AP_INLINE ap_private srem(int64_t RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
 
@@ -5373,7 +5374,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this == Val
   /// @brief Equality comparison.
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool eq(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool eq(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return (*this) == RHS;
   }
 
@@ -5382,7 +5383,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this != Val
   /// @brief Inequality comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ne(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ne(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return !((*this) == RHS);
   }
 
@@ -5391,7 +5392,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this < RHS when both are considered unsigned.
   /// @brief Unsigned less than comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ult(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ult(const ap_private<_AP_W, _AP_S1>& RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
     ap_private<_AP_W, _AP_S1> RHS_(RHS);
@@ -5420,7 +5421,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
     return false;
   }
 
-  HLS_CONSTEXPR INLINE bool ult(uint64_t RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ult(uint64_t RHS) const {
     ap_private<_AP_W, _AP_S, false> LHS_(*this);
     LHS_.clearUnusedBits();
 
@@ -5442,7 +5443,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool slt(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool slt(const ap_private<_AP_W, _AP_S1>& RHS) const {
     ap_private lhs(*this);
     ap_private<_AP_W, _AP_S1> rhs(RHS);
     bool lhsNeg = isNegative();
@@ -5476,7 +5477,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this <= RHS when both are considered unsigned.
   /// @brief Unsigned less or equal comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ule(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ule(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return ult(RHS) || eq(RHS);
   }
 
@@ -5485,7 +5486,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this <= RHS when both are considered signed.
   /// @brief Signed less or equal comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool sle(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool sle(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return slt(RHS) || eq(RHS);
   }
 
@@ -5494,7 +5495,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this > RHS when both are considered unsigned.
   /// @brief Unsigned greather than comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool ugt(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool ugt(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return !ult(RHS) && !eq(RHS);
   }
 
@@ -5503,7 +5504,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this > RHS when both are considered signed.
   /// @brief Signed greather than comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool sgt(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool sgt(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return !slt(RHS) && !eq(RHS);
   }
 
@@ -5512,7 +5513,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this >= RHS when both are considered unsigned.
   /// @brief Unsigned greater or equal comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool uge(const ap_private<_AP_W, _AP_S>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool uge(const ap_private<_AP_W, _AP_S>& RHS) const {
     return !ult(RHS);
   }
 
@@ -5521,13 +5522,13 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns true if *this >= RHS when both are considered signed.
   /// @brief Signed greather or equal comparison
   template <bool _AP_S1>
-  HLS_CONSTEXPR INLINE bool sge(const ap_private<_AP_W, _AP_S1>& RHS) const {
+  HLS_CONSTEXPR AP_INLINE bool sge(const ap_private<_AP_W, _AP_S1>& RHS) const {
     return !slt(RHS);
   }
 
   // Sign extend to a new width.
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE void cpSext(const ap_private<_AP_W1, _AP_S1>& that) {
+  HLS_CONSTEXPR AP_INLINE void cpSext(const ap_private<_AP_W1, _AP_S1>& that) {
     // change to std::is_constant_evaluated when c++20
 #ifndef HLS_CONSTEXPR_ENABLE
     assert(_AP_W1 < BitWidth && "Invalid ap_private SignExtend request");
@@ -5568,7 +5569,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   //  Zero extend to a new width.
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE void cpZext(const ap_private<_AP_W1, _AP_S1>& that) {
+  HLS_CONSTEXPR AP_INLINE void cpZext(const ap_private<_AP_W1, _AP_S1>& that) {
     // change to std::is_constant_evaluated when c++20
 #ifndef HLS_CONSTEXPR_ENABLE
     assert(_AP_W1 < BitWidth && "Invalid ap_private ZeroExtend request");
@@ -5584,7 +5585,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE void cpZextOrTrunc(const ap_private<_AP_W1, _AP_S1>& that) {
+  HLS_CONSTEXPR AP_INLINE void cpZextOrTrunc(const ap_private<_AP_W1, _AP_S1>& that) {
     if (BitWidth > _AP_W1)
       cpZext(that);
     else {
@@ -5594,7 +5595,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   template <int _AP_W1, bool _AP_S1>
-  HLS_CONSTEXPR INLINE void cpSextOrTrunc(const ap_private<_AP_W1, _AP_S1>& that) {
+  HLS_CONSTEXPR AP_INLINE void cpSextOrTrunc(const ap_private<_AP_W1, _AP_S1>& that) {
     if (BitWidth > _AP_W1)
       cpSext(that);
     else {
@@ -5608,12 +5609,12 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @{
 
   /// @returns the total number of bits.
-  HLS_CONSTEXPR INLINE uint32_t getBitWidth() const { return BitWidth; }
+  HLS_CONSTEXPR AP_INLINE uint32_t getBitWidth() const { return BitWidth; }
 
   /// Here one word's bitwidth equals to that of uint64_t.
   /// @returns the number of words to hold the integer value of this ap_private.
   /// @brief Get the number of words.
-  HLS_CONSTEXPR INLINE uint32_t getNumWords() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t getNumWords() const {
     return (BitWidth + APINT_BITS_PER_WORD - 1) / APINT_BITS_PER_WORD;
   }
 
@@ -5621,7 +5622,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// bit width minus the number of leading zeros. This is used in several
   /// computations to see how "wide" the value is.
   /// @brief Compute the number of active bits in the value
-  HLS_CONSTEXPR INLINE uint32_t getActiveBits() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t getActiveBits() const {
     uint32_t bits = BitWidth - countLeadingZeros();
     return bits ? bits : 1;
   }
@@ -5631,7 +5632,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// uint64_t. The bitwidth must be <= 64 or the value must fit within a
   /// uint64_t. Otherwise an assertion will result.
   /// @brief Get zero extended value
-  INLINE uint64_t getZExtValue() const {
+  AP_INLINE uint64_t getZExtValue() const {
     assert(getActiveBits() <= 64 && "Too many bits for uint64_t");
     return *pVal;
   }
@@ -5641,7 +5642,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// int64_t. The bit width must be <= 64 or the value must fit within an
   /// int64_t. Otherwise an assertion will result.
   /// @brief Get sign extended value
-  INLINE int64_t getSExtValue() const {
+  AP_INLINE int64_t getSExtValue() const {
     assert(getActiveBits() <= 64 && "Too many bits for int64_t");
     return int64_t(pVal[0]);
   }
@@ -5649,7 +5650,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// This method determines how many bits are required to hold the ap_private
   /// equivalent of the string given by \p str of length \p slen.
   /// @brief Get bits required for string value.
-  INLINE static uint32_t getBitsNeeded(const char* str, uint32_t slen,
+  AP_INLINE static uint32_t getBitsNeeded(const char* str, uint32_t slen,
                                        uint8_t radix) {
     assert(str != 0 && "Invalid value string");
     assert(slen > 0 && "Invalid string length");
@@ -5683,7 +5684,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns BitWidth if the value is zero.
   /// @returns the number of zeros from the most significant bit to the first
   /// one bits.
-  HLS_CONSTEXPR INLINE uint32_t countLeadingZeros() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t countLeadingZeros() const {
     enum {
       msw_bits = (BitWidth % APINT_BITS_PER_WORD)
                      ? (BitWidth % APINT_BITS_PER_WORD)
@@ -5710,7 +5711,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns 0 if the high order bit is not set
   /// @returns the number of 1 bits from the most significant to the least
   /// @brief Count the number of leading one bits.
-  HLS_CONSTEXPR INLINE uint32_t countLeadingOnes() const {
+  HLS_CONSTEXPR AP_INLINE uint32_t countLeadingOnes() const {
     if (isSingleWord())
       return ap_private_ops::countLeadingOnes_64(get_VAL(), APINT_BITS_PER_WORD - BitWidth);
 
@@ -5739,7 +5740,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns the number of zeros from the least significant bit to the first
   /// one bit.
   /// @brief Count the number of trailing zero bits.
-  INLINE uint32_t countTrailingZeros() const {
+  AP_INLINE uint32_t countTrailingZeros() const {
     uint32_t Count = 0;
     uint32_t i = 0;
     for (; i < _AP_N && get_pVal(i) == 0; ++i) Count += APINT_BITS_PER_WORD;
@@ -5752,7 +5753,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// @returns 0 if the value is zero.
   /// @returns the number of set bits.
   /// @brief Count the number of bits set.
-  INLINE uint32_t countPopulation() const {
+  AP_INLINE uint32_t countPopulation() const {
     uint32_t Count = 0;
     for (int i = 0; i < _AP_N - 1; ++i)
       Count += ap_private_ops::CountPopulation_64(pVal[i]);
@@ -5766,14 +5767,14 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   /// This is used internally to convert an ap_private to a string.
   /// @brief Converts an ap_private to a std::string
-  INLINE std::string toString(uint8_t radix, bool wantSigned) const;
+  AP_INLINE std::string toString(uint8_t radix, bool wantSigned) const;
 
   /// Considers the ap_private to be unsigned and converts it into a string in
   /// the
   /// radix given. The radix can be 2, 8, 10 or 16.
   /// @returns a character interpretation of the ap_private
   /// @brief Convert unsigned ap_private to string representation.
-  INLINE std::string toStringUnsigned(uint8_t radix = 10) const {
+  AP_INLINE std::string toStringUnsigned(uint8_t radix = 10) const {
     return toString(radix, false);
   }
 
@@ -5782,12 +5783,12 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// radix given. The radix can be 2, 8, 10 or 16.
   /// @returns a character interpretation of the ap_private
   /// @brief Convert unsigned ap_private to string representation.
-  INLINE std::string toStringSigned(uint8_t radix = 10) const {
+  AP_INLINE std::string toStringSigned(uint8_t radix = 10) const {
     return toString(radix, true);
   }
 
   /// @brief Converts this ap_private to a double value.
-  HLS_CONSTEXPR INLINE double roundToDouble(bool isSigned) const {
+  HLS_CONSTEXPR AP_INLINE double roundToDouble(bool isSigned) const {
     // Handle the simple case where the value is contained in one uint64_t.
     if (isSingleWord() || getActiveBits() <= APINT_BITS_PER_WORD) {
       uint64_t val = pVal[0];
@@ -5849,16 +5850,16 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   }
 
   /// @brief Converts this unsigned ap_private to a double value.
-  HLS_CONSTEXPR INLINE double roundToDouble() const { return roundToDouble(false); }
+  HLS_CONSTEXPR AP_INLINE double roundToDouble() const { return roundToDouble(false); }
 
   /// @brief Converts this signed ap_private to a double value.
-  HLS_CONSTEXPR INLINE double signedRoundToDouble() const { return roundToDouble(true); }
+  HLS_CONSTEXPR AP_INLINE double signedRoundToDouble() const { return roundToDouble(true); }
 
   /// The conversion does not do a translation from integer to double, it just
   /// re-interprets the bits as a double. Note that it is valid to do this on
   /// any bit width. Exactly 64 bits will be translated.
   /// @brief Converts ap_private bits to a double
-  INLINE double bitsToDouble() const {
+  AP_INLINE double bitsToDouble() const {
     union {
       uint64_t __I;
       double __D;
@@ -5871,7 +5872,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// re-interprets the bits as a float. Note that it is valid to do this on
   /// any bit width. Exactly 32 bits will be translated.
   /// @brief Converts ap_private bits to a double
-  INLINE float bitsToFloat() const {
+  AP_INLINE float bitsToFloat() const {
     union {
       uint32_t __I;
       float __F;
@@ -5884,7 +5885,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// re-interprets the bits of the double. Note that it is valid to do this on
   /// any bit width but bits from V may get truncated.
   /// @brief Converts a double to ap_private bits.
-  INLINE ap_private& doubleToBits(double __V) {
+  AP_INLINE ap_private& doubleToBits(double __V) {
     union {
       uint64_t __I;
       double __D;
@@ -5898,7 +5899,7 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
   /// re-interprets the bits of the float. Note that it is valid to do this on
   /// any bit width but bits from V may get truncated.
   /// @brief Converts a float to ap_private bits.
-  INLINE ap_private& floatToBits(float __V) {
+  AP_INLINE ap_private& floatToBits(float __V) {
     union {
       uint32_t __I;
       float __F;
@@ -5909,24 +5910,24 @@ __attribute__((aligned(1 << logceil<_AP_W>::val)))
 
   // Reduce operation
   //-----------------------------------------------------------
-  INLINE bool and_reduce() const { return isMaxValue(); }
+  AP_INLINE bool and_reduce() const { return isMaxValue(); }
 
-  INLINE bool nand_reduce() const { return countPopulation() != 0; }
+  AP_INLINE bool nand_reduce() const { return countPopulation() != 0; }
 
-  INLINE bool or_reduce() const { return (bool)countPopulation(); }
+  AP_INLINE bool or_reduce() const { return (bool)countPopulation(); }
 
-  INLINE bool nor_reduce() const { return countPopulation() == 0; }
+  AP_INLINE bool nor_reduce() const { return countPopulation() == 0; }
 
-  INLINE bool xor_reduce() const {
+  AP_INLINE bool xor_reduce() const {
     unsigned int i = countPopulation();
     return (i % 2) ? true : false;
   }
 
-  INLINE bool xnor_reduce() const {
+  AP_INLINE bool xnor_reduce() const {
     unsigned int i = countPopulation();
     return (i % 2) ? false : true;
   }
-  INLINE std::string to_string(uint8_t radix = 16, bool sign = false) const {
+  AP_INLINE std::string to_string(uint8_t radix = 16, bool sign = false) const {
     return toString(radix, radix == 10 ? _AP_S : sign);
   }
 }; // End of class ap_private <_AP_W, _AP_S, false>
@@ -5935,24 +5936,24 @@ namespace ap_private_ops {
 
 enum { APINT_BITS_PER_WORD = 64 };
 template <int _AP_W, bool _AP_S>
-HLS_CONSTEXPR INLINE bool operator==(uint64_t V1, const ap_private<_AP_W, _AP_S>& V2) {
+HLS_CONSTEXPR AP_INLINE bool operator==(uint64_t V1, const ap_private<_AP_W, _AP_S>& V2) {
   return V2 == V1;
 }
 
 template <int _AP_W, bool _AP_S>
-HLS_CONSTEXPR INLINE bool operator!=(uint64_t V1, const ap_private<_AP_W, _AP_S>& V2) {
+HLS_CONSTEXPR AP_INLINE bool operator!=(uint64_t V1, const ap_private<_AP_W, _AP_S>& V2) {
   return V2 != V1;
 }
 
 template <int _AP_W, bool _AP_S, int index>
-HLS_CONSTEXPR INLINE bool get(const ap_private<_AP_W, _AP_S>& a) {
+HLS_CONSTEXPR AP_INLINE bool get(const ap_private<_AP_W, _AP_S>& a) {
   //static const uint64_t mask = 1ULL << (index & 0x3f);
   const uint64_t mask = 1ULL << (index & 0x3f);
   return ((mask & a.get_pVal((index) >> 6)) != 0);
 }
 
 template <int _AP_W, bool _AP_S, int msb_index, int lsb_index>
-INLINE void set(ap_private<_AP_W, _AP_S>& a,
+AP_INLINE void set(ap_private<_AP_W, _AP_S>& a,
                 const ap_private<AP_MAX(msb_index, 1), true>& mark1 = 0,
                 const ap_private<AP_MAX(lsb_index, 1), true>& mark2 = 0) {
   enum {
@@ -5986,7 +5987,7 @@ INLINE void set(ap_private<_AP_W, _AP_S>& a,
 }
 
 template <int _AP_W, bool _AP_S, int msb_index, int lsb_index>
-INLINE void clear(ap_private<_AP_W, _AP_S>& a,
+AP_INLINE void clear(ap_private<_AP_W, _AP_S>& a,
                   const ap_private<AP_MAX(msb_index, 1), true>& mark1 = 0,
                   const ap_private<AP_MAX(lsb_index, 1), true>& mark2 = 0) {
   enum {
@@ -6019,7 +6020,7 @@ INLINE void clear(ap_private<_AP_W, _AP_S>& a,
 }
 
 template <int _AP_W, bool _AP_S, int index>
-INLINE void set(ap_private<_AP_W, _AP_S>& a,
+AP_INLINE void set(ap_private<_AP_W, _AP_S>& a,
                 const ap_private<AP_MAX(index, 1), true>& mark = 0) {
   enum { APINT_BITS_PER_WORD = 64, word = index / APINT_BITS_PER_WORD };
   static const uint64_t mask = 1ULL << (index % APINT_BITS_PER_WORD);
@@ -6029,7 +6030,7 @@ INLINE void set(ap_private<_AP_W, _AP_S>& a,
 }
 
 template <int _AP_W, bool _AP_S, int index>
-INLINE void clear(ap_private<_AP_W, _AP_S>& a,
+AP_INLINE void clear(ap_private<_AP_W, _AP_S>& a,
                   const ap_private<AP_MAX(index, 1), true>& mark = 0) {
   enum { APINT_BITS_PER_WORD = 64, word = index / APINT_BITS_PER_WORD };
   static const uint64_t mask = ~(1ULL << (index % APINT_BITS_PER_WORD));
@@ -6041,7 +6042,7 @@ INLINE void clear(ap_private<_AP_W, _AP_S>& a,
 } // End of ap_private_ops namespace
 
 template <int _AP_W, bool _AP_S>
-INLINE std::string ap_private<_AP_W, _AP_S, false>::toString(
+AP_INLINE std::string ap_private<_AP_W, _AP_S, false>::toString(
     uint8_t radix, bool wantSigned) const {
   assert((radix == 10 || radix == 8 || radix == 16 || radix == 2) &&
          "Radix should be 2, 8, 10, or 16!");
@@ -6166,14 +6167,14 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //  _AP_T1& mbv1;
 //  _AP_T2& mbv2;
 //
-//  INLINE ap_concat_ref(const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>&
+//  AP_INLINE ap_concat_ref(const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>&
 //  ref)
 //      : mbv1(ref.mbv1), mbv2(ref.mbv2) {}
 //
-//  INLINE ap_concat_ref(_AP_T1& bv1, _AP_T2& bv2) : mbv1(bv1), mbv2(bv2) {}
+//  AP_INLINE ap_concat_ref(_AP_T1& bv1, _AP_T2& bv2) : mbv1(bv1), mbv2(bv2) {}
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_concat_ref& operator=(const ap_private<_AP_W3, _AP_S3>& val) {
+//  AP_INLINE ap_concat_ref& operator=(const ap_private<_AP_W3, _AP_S3>& val) {
 //    ap_private<_AP_W1 + _AP_W2, false> vval(val);
 //    int W_ref1 = mbv1.length();
 //    int W_ref2 = mbv2.length();
@@ -6186,33 +6187,33 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //    return *this;
 //  }
 //
-//  INLINE ap_concat_ref& operator=(unsigned long long val) {
+//  AP_INLINE ap_concat_ref& operator=(unsigned long long val) {
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal(val);
 //    return operator=(tmpVal);
 //  }
 //
 //  template <int _AP_W3, typename _AP_T3, int _AP_W4, typename _AP_T4>
-//  INLINE ap_concat_ref& operator=(
+//  AP_INLINE ap_concat_ref& operator=(
 //      const ap_concat_ref<_AP_W3, _AP_T3, _AP_W4, _AP_T4>& val) {
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal(val);
 //    return operator=(tmpVal);
 //  }
 //
-//  INLINE ap_concat_ref& operator=(
+//  AP_INLINE ap_concat_ref& operator=(
 //      const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>& val) {
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal(val);
 //    return operator=(tmpVal);
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_concat_ref& operator=(const _private_bit_ref<_AP_W3, _AP_S3>&
+//  AP_INLINE ap_concat_ref& operator=(const _private_bit_ref<_AP_W3, _AP_S3>&
 //  val) {
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal(val);
 //    return operator=(tmpVal);
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_concat_ref& operator=(const _private_range_ref<_AP_W3, _AP_S3>&
+//  AP_INLINE ap_concat_ref& operator=(const _private_range_ref<_AP_W3, _AP_S3>&
 //  val) {
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal(val);
 //    return operator=(tmpVal);
@@ -6220,7 +6221,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //
 //  template <int _AP_W3, int _AP_I3, bool _AP_S3, ap_q_mode _AP_Q3,
 //            ap_o_mode _AP_O3, int _AP_N3>
-//  INLINE ap_concat_ref& operator=(
+//  AP_INLINE ap_concat_ref& operator=(
 //      const af_range_ref<_AP_W3, _AP_I3, _AP_S3, _AP_Q3, _AP_O3, _AP_N3>& val)
 //      {
 //    return operator=((const ap_private<_AP_W3, false>)(val));
@@ -6228,7 +6229,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //
 //  template <int _AP_W3, int _AP_I3, bool _AP_S3, ap_q_mode _AP_Q3,
 //            ap_o_mode _AP_O3, int _AP_N3>
-//  INLINE ap_concat_ref& operator=(
+//  AP_INLINE ap_concat_ref& operator=(
 //      const ap_fixed_base<_AP_W3, _AP_I3, _AP_S3, _AP_Q3, _AP_O3, _AP_N3>&
 //          val) {
 //    return operator=(val.to_ap_private());
@@ -6236,17 +6237,17 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //
 //  template <int _AP_W3, int _AP_I3, bool _AP_S3, ap_q_mode _AP_Q3,
 //            ap_o_mode _AP_O3, int _AP_N3>
-//  INLINE ap_concat_ref& operator=(
+//  AP_INLINE ap_concat_ref& operator=(
 //      const af_bit_ref<_AP_W3, _AP_I3, _AP_S3, _AP_Q3, _AP_O3, _AP_N3>& val) {
 //    return operator=((unsigned long long)(bool)(val));
 //  }
 //
-//  INLINE operator ap_private<_AP_WR, false>() const { return get(); }
+//  AP_INLINE operator ap_private<_AP_WR, false>() const { return get(); }
 //
-//  INLINE operator unsigned long long() const { return get().to_uint64(); }
+//  AP_INLINE operator unsigned long long() const { return get().to_uint64(); }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3,
+//  AP_INLINE ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3,
 //                       _private_range_ref<_AP_W3, _AP_S3> >
 //  operator,(const _private_range_ref<_AP_W3, _AP_S3> &a2) {
 //    return ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3,
@@ -6255,7 +6256,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3, ap_private<_AP_W3, _AP_S3>
 //      >
 //      operator,(ap_private<_AP_W3, _AP_S3> &a2) {
@@ -6264,7 +6265,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3, ap_private<_AP_W3, _AP_S3>
 //      >
 //      operator,(const ap_private<_AP_W3, _AP_S3> &a2) {
@@ -6274,7 +6275,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_concat_ref<_AP_WR, ap_concat_ref, 1, _private_bit_ref<_AP_W3,
+//  AP_INLINE ap_concat_ref<_AP_WR, ap_concat_ref, 1, _private_bit_ref<_AP_W3,
 //  _AP_S3> >
 //  operator,(const _private_bit_ref<_AP_W3, _AP_S3> &a2) {
 //    return ap_concat_ref<_AP_WR, ap_concat_ref, 1, _private_bit_ref<_AP_W3,
@@ -6283,7 +6284,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //  }
 //
 //  template <int _AP_W3, typename _AP_T3, int _AP_W4, typename _AP_T4>
-//  INLINE ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3 + _AP_W4,
+//  AP_INLINE ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3 + _AP_W4,
 //                       ap_concat_ref<_AP_W3, _AP_T3, _AP_W4, _AP_T4> >
 //  operator,(const ap_concat_ref<_AP_W3, _AP_T3, _AP_W4, _AP_T4> &a2) {
 //    return ap_concat_ref<_AP_WR, ap_concat_ref, _AP_W3 + _AP_W4,
@@ -6294,7 +6295,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //
 //  template <int _AP_W3, int _AP_I3, bool _AP_S3, ap_q_mode _AP_Q3,
 //            ap_o_mode _AP_O3, int _AP_N3>
-//  INLINE ap_concat_ref<
+//  AP_INLINE ap_concat_ref<
 //      _AP_WR, ap_concat_ref, _AP_W3,
 //      af_range_ref<_AP_W3, _AP_I3, _AP_S3, _AP_Q3, _AP_O3, _AP_N3> >
 //  operator,(
@@ -6311,7 +6312,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //
 //  template <int _AP_W3, int _AP_I3, bool _AP_S3, ap_q_mode _AP_Q3,
 //            ap_o_mode _AP_O3, int _AP_N3>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_WR, ap_concat_ref, 1,
 //                    af_bit_ref<_AP_W3, _AP_I3, _AP_S3, _AP_Q3, _AP_O3, _AP_N3>
 //                    >
@@ -6328,24 +6329,24 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_private<AP_MAX(_AP_WR, _AP_W3), _AP_S3> operator&(
+//  AP_INLINE ap_private<AP_MAX(_AP_WR, _AP_W3), _AP_S3> operator&(
 //      const ap_private<_AP_W3, _AP_S3>& a2) {
 //    return get() & a2;
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_private<AP_MAX(_AP_WR, _AP_W3), _AP_S3> operator|(
+//  AP_INLINE ap_private<AP_MAX(_AP_WR, _AP_W3), _AP_S3> operator|(
 //      const ap_private<_AP_W3, _AP_S3>& a2) {
 //    return get() | a2;
 //  }
 //
 //  template <int _AP_W3, bool _AP_S3>
-//  INLINE ap_private<AP_MAX(_AP_WR, _AP_W3), _AP_S3> operator^(
+//  AP_INLINE ap_private<AP_MAX(_AP_WR, _AP_W3), _AP_S3> operator^(
 //      const ap_private<_AP_W3, _AP_S3>& a2) {
 //    return ap_private<AP_MAX(_AP_WR, _AP_W3), _AP_S3>(get() ^ a2);
 //  }
 //
-//  INLINE const ap_private<_AP_WR, false> get() const {
+//  AP_INLINE const ap_private<_AP_WR, false> get() const {
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal =
 //        ap_private<_AP_W1 + _AP_W2, false>(mbv1.get());
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal2 =
@@ -6356,7 +6357,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //    return tmpVal;
 //  }
 //
-//  INLINE const ap_private<_AP_WR, false> get() {
+//  AP_INLINE const ap_private<_AP_WR, false> get() {
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal =
 //        ap_private<_AP_W1 + _AP_W2, false>(mbv1.get());
 //    ap_private<_AP_W1 + _AP_W2, false> tmpVal2 =
@@ -6368,7 +6369,7 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //  }
 //
 //  template <int _AP_W3>
-//  INLINE void set(const ap_private<_AP_W3, false>& val) {
+//  AP_INLINE void set(const ap_private<_AP_W3, false>& val) {
 //    ap_private<_AP_W1 + _AP_W2, false> vval(val);
 //    int W_ref1 = mbv1.length();
 //    int W_ref2 = mbv2.length();
@@ -6380,9 +6381,9 @@ std::ostream &operator<<(std::ostream &os, const ap_private<_AP_W, _AP_S> &x) {
 //    mbv2.set(ap_private<_AP_W2, false>(vval & mask2));
 //  }
 //
-//  INLINE int length() const { return mbv1.length() + mbv2.length(); }
+//  AP_INLINE int length() const { return mbv1.length() + mbv2.length(); }
 //
-//  INLINE std::string to_string(uint8_t radix = 2) const {
+//  AP_INLINE std::string to_string(uint8_t radix = 2) const {
 //    return get().to_string(radix);
 //  }
 //}; // struct ap_concat_ref.
@@ -6402,11 +6403,11 @@ struct _private_range_ref {
 
  public:
   /// copy ctor.
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref(const _private_range_ref<_AP_W, _AP_S>& ref)
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref(const _private_range_ref<_AP_W, _AP_S>& ref)
       : d_bv(ref.d_bv), l_index(ref.l_index), h_index(ref.h_index) {}
 
   /// direct ctor.
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref(ap_private<_AP_W, _AP_S>* bv, int h, int l)
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref(ap_private<_AP_W, _AP_S>* bv, int h, int l)
       : d_bv(*bv), l_index(l), h_index(h) {
     _AP_WARNING(h < 0 || l < 0,
                 "Higher bound (%d) and lower bound (%d) cannot be "
@@ -6419,7 +6420,7 @@ struct _private_range_ref {
 
   /// compound or assignment.
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_range_ref<_AP_W, _AP_S>& operator|=(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S>& operator|=(
       const _private_range_ref<_AP_W2, _AP_S2>& ref) {
     _AP_WARNING((h_index - l_index) != (ref.h_index - ref.l_index),
                 "Bitsize mismach for ap_private<>.range() &= "
@@ -6430,7 +6431,7 @@ struct _private_range_ref {
 
   /// compound or assignment with root type.
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_range_ref<_AP_W, _AP_S>& operator|=(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S>& operator|=(
       const _AP_ROOT_TYPE<_AP_W2, _AP_S2>& ref) {
     _AP_WARNING((h_index - l_index + 1) != _AP_W2,
                 "Bitsize mismach for ap_private<>.range() |= _AP_ROOT_TYPE<>.");
@@ -6440,7 +6441,7 @@ struct _private_range_ref {
 
   /// compound and assignment.
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_range_ref<_AP_W, _AP_S>& operator&=(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S>& operator&=(
       const _private_range_ref<_AP_W2, _AP_S2>& ref) {
     _AP_WARNING((h_index - l_index) != (ref.h_index - ref.l_index),
                 "Bitsize mismach for ap_private<>.range() &= "
@@ -6451,7 +6452,7 @@ struct _private_range_ref {
 
   /// compound and assignment with root type.
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_range_ref<_AP_W, _AP_S>& operator&=(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S>& operator&=(
       const _AP_ROOT_TYPE<_AP_W2, _AP_S2>& ref) {
     _AP_WARNING((h_index - l_index + 1) != _AP_W2,
                 "Bitsize mismach for ap_private<>.range() &= _AP_ROOT_TYPE<>.");
@@ -6461,7 +6462,7 @@ struct _private_range_ref {
 
   /// compound xor assignment.
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_range_ref<_AP_W, _AP_S>& operator^=(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S>& operator^=(
       const _private_range_ref<_AP_W2, _AP_S2>& ref) {
     _AP_WARNING((h_index - l_index) != (ref.h_index - ref.l_index),
                 "Bitsize mismach for ap_private<>.range() ^= "
@@ -6472,7 +6473,7 @@ struct _private_range_ref {
 
   /// compound xor assignment with root type.
   template <int _AP_W2, bool _AP_S2>
-  INLINE _private_range_ref<_AP_W, _AP_S>& operator^=(
+  AP_INLINE _private_range_ref<_AP_W, _AP_S>& operator^=(
       const _AP_ROOT_TYPE<_AP_W2, _AP_S2>& ref) {
     _AP_WARNING((h_index - l_index + 1) != _AP_W2,
                 "Bitsize mismach for ap_private<>.range() ^= _AP_ROOT_TYPE<>.");
@@ -6482,7 +6483,7 @@ struct _private_range_ref {
 
   /// @name convertors.
   //  @{
-  HLS_CONSTEXPR_EXTRA INLINE operator ap_private<_AP_W, false>() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE operator ap_private<_AP_W, false>() const {
     ap_private<_AP_W, false> val(0);
     if (h_index >= l_index) {
       if (_AP_W > 64) {
@@ -6503,11 +6504,11 @@ struct _private_range_ref {
     return val;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE operator unsigned long long() const { return to_uint64(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE operator unsigned long long() const { return to_uint64(); }
   //  @}
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref& operator=(const ap_private<_AP_W2, _AP_S2>& val) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref& operator=(const ap_private<_AP_W2, _AP_S2>& val) {
     ap_private<_AP_W, false> vval = ap_private<_AP_W, false>(val);
     if (l_index > h_index) {
       for (int i = 0, j = l_index; j >= 0 && j >= h_index; j--, i++)
@@ -6549,26 +6550,26 @@ struct _private_range_ref {
     return *this;
   } // operator=(const ap_private<>&)
 
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref& operator=(unsigned long long val) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref& operator=(unsigned long long val) {
     const ap_private<_AP_W, _AP_S> vval = val;
     return operator=(vval);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref& operator=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref& operator=(
       const _private_bit_ref<_AP_W2, _AP_S2>& val) {
     return operator=((unsigned long long)(bool)val);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref& operator=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref& operator=(
       const _private_range_ref<_AP_W2, _AP_S2>& val) {
     const ap_private<_AP_W, false> tmpVal(val);
     return operator=(tmpVal);
   }
 
 //  template <int _AP_W3, typename _AP_T3, int _AP_W4, typename _AP_T4>
-//  INLINE _private_range_ref& operator=(
+//  AP_INLINE _private_range_ref& operator=(
 //      const ap_concat_ref<_AP_W3, _AP_T3, _AP_W4, _AP_T4>& val) {
 //    const ap_private<_AP_W, false> tmpVal(val);
 //    return operator=(tmpVal);
@@ -6578,27 +6579,27 @@ struct _private_range_ref {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref& operator=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref& operator=(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
     return operator=(val.to_ap_int_base().V);
   }
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref& operator=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref& operator=(
       const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
     return operator=(val.operator ap_int_base<_AP_W2, false>().V);
   }
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref& operator=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref& operator=(
       const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
     return operator=((unsigned long long)(bool)val);
   }
 
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, _private_range_ref, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, _private_range_ref, _AP_W2,
 //                       _private_range_ref<_AP_W2, _AP_S2> >
 //  operator,(const _private_range_ref<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, _private_range_ref, _AP_W2,
@@ -6607,14 +6608,14 @@ struct _private_range_ref {
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, _private_range_ref, _AP_W2,
+//  AP_INLINE ap_concat_ref<_AP_W, _private_range_ref, _AP_W2,
 //                       ap_private<_AP_W2, _AP_S2> >
 //  operator,(ap_private<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, _private_range_ref, _AP_W2,
 //                         ap_private<_AP_W2, _AP_S2> >(*this, a2);
 //  }
 //
-//  INLINE
+//  AP_INLINE
 //  ap_concat_ref<_AP_W, _private_range_ref, _AP_W, ap_private<_AP_W, _AP_S> >
 //  operator,(ap_private<_AP_W, _AP_S>& a2) {
 //    return ap_concat_ref<_AP_W, _private_range_ref, _AP_W,
@@ -6622,7 +6623,7 @@ struct _private_range_ref {
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<_AP_W, _private_range_ref, 1,
+//  AP_INLINE ap_concat_ref<_AP_W, _private_range_ref, 1,
 //                       _private_bit_ref<_AP_W2, _AP_S2> >
 //  operator,(const _private_bit_ref<_AP_W2, _AP_S2> &a2) {
 //    return ap_concat_ref<_AP_W, _private_range_ref, 1,
@@ -6631,7 +6632,7 @@ struct _private_range_ref {
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_concat_ref<_AP_W, _private_range_ref, _AP_W2 + _AP_W3,
+//  AP_INLINE ap_concat_ref<_AP_W, _private_range_ref, _AP_W2 + _AP_W3,
 //                       ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
 //  operator,(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) {
 //    return ap_concat_ref<_AP_W, _private_range_ref, _AP_W2 + _AP_W3,
@@ -6641,7 +6642,7 @@ struct _private_range_ref {
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_concat_ref<
+//  AP_INLINE ap_concat_ref<
 //      _AP_W, _private_range_ref, _AP_W2,
 //      af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //  operator,(
@@ -6656,7 +6657,7 @@ struct _private_range_ref {
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<_AP_W, _private_range_ref, 1,
 //                    af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //      operator,(const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>
@@ -6670,49 +6671,49 @@ struct _private_range_ref {
 //  }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator==(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator==(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     ap_private<_AP_W, false> lhs = get();
     ap_private<_AP_W2, false> rhs = op2.get();
     return lhs == rhs;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator!=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator!=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     ap_private<_AP_W, false> lhs = get();
     ap_private<_AP_W2, false> rhs = op2.get();
     return lhs != rhs;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator>(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator>(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     ap_private<_AP_W, false> lhs = get();
     ap_private<_AP_W2, false> rhs = op2.get();
     return lhs > rhs;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator>=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator>=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     ap_private<_AP_W, false> lhs = get();
     ap_private<_AP_W2, false> rhs = op2.get();
     return lhs >= rhs;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator<(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator<(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     ap_private<_AP_W, false> lhs = get();
     ap_private<_AP_W2, false> rhs = op2.get();
     return lhs < rhs;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator<=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator<=(const _private_range_ref<_AP_W2, _AP_S2>& op2) {
     ap_private<_AP_W, false> lhs = get();
     ap_private<_AP_W2, false> rhs = op2.get();
     return lhs <= rhs;
   }
 
   template <int _AP_W2>
-  INLINE void set(const ap_private<_AP_W2, false>& val) {
+  AP_INLINE void set(const ap_private<_AP_W2, false>& val) {
     ap_private<_AP_W, _AP_S> vval = val;
     if (l_index > h_index) {
       for (int i = 0, j = l_index; j >= 0 && j >= h_index; j--, i++)
@@ -6759,7 +6760,7 @@ struct _private_range_ref {
     }
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE ap_private<_AP_W, false> get() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private<_AP_W, false> get() const {
     ap_private<_AP_W, false> val(0);
     if (h_index < l_index) {
       for (int i = 0, j = l_index; j >= 0 && j >= h_index; j--, i++)
@@ -6783,7 +6784,7 @@ struct _private_range_ref {
     return val;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE ap_private<_AP_W, false> get() {
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private<_AP_W, false> get() {
     ap_private<_AP_W, false> val(0);
     if (h_index < l_index) {
       for (int i = 0, j = l_index; j >= 0 && j >= h_index; j--, i++)
@@ -6806,45 +6807,45 @@ struct _private_range_ref {
     return val;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE int length() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE int length() const {
     return h_index >= l_index ? h_index - l_index + 1 : l_index - h_index + 1;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE int to_int() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE int to_int() const {
     ap_private<_AP_W, false> val = get();
     return val.to_int();
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE unsigned int to_uint() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE unsigned int to_uint() const {
     ap_private<_AP_W, false> val = get();
     return val.to_uint();
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE long to_long() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE long to_long() const {
     ap_private<_AP_W, false> val = get();
     return val.to_long();
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE unsigned long to_ulong() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE unsigned long to_ulong() const {
     ap_private<_AP_W, false> val = get();
     return val.to_ulong();
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE ap_slong to_int64() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_slong to_int64() const {
     ap_private<_AP_W, false> val = get();
     return val.to_int64();
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE ap_ulong to_uint64() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_ulong to_uint64() const {
     ap_private<_AP_W, false> val = get();
     return val.to_uint64();
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE std::string to_string(uint8_t radix = 2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE std::string to_string(uint8_t radix = 2) const {
     return get().to_string(radix);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE bool and_reduce() {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool and_reduce() {
     bool ret = true;
     bool reverse = l_index > h_index;
     unsigned low = reverse ? h_index : l_index;
@@ -6853,7 +6854,7 @@ struct _private_range_ref {
     return ret;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE bool or_reduce() {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool or_reduce() {
     bool ret = false;
     bool reverse = l_index > h_index;
     unsigned low = reverse ? h_index : l_index;
@@ -6862,7 +6863,7 @@ struct _private_range_ref {
     return ret;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE bool xor_reduce() {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool xor_reduce() {
     bool ret = false;
     bool reverse = l_index > h_index;
     unsigned low = reverse ? h_index : l_index;
@@ -6886,11 +6887,11 @@ struct _private_bit_ref {
 
  public:
   // copy ctor.
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref(const _private_bit_ref<_AP_W, _AP_S>& ref)
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref(const _private_bit_ref<_AP_W, _AP_S>& ref)
       : d_bv(ref.d_bv), d_index(ref.d_index) {}
 
   // director ctor.
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref(ap_private<_AP_W, _AP_S>& bv, int index = 0)
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref(ap_private<_AP_W, _AP_S>& bv, int index = 0)
       : d_bv(bv), d_index(index) {
     _AP_WARNING(d_index < 0, "Index of bit vector  (%d) cannot be negative.\n",
                 d_index);
@@ -6898,12 +6899,12 @@ struct _private_bit_ref {
                 "Index of bit vector (%d) out of range (%d).\n", d_index, _AP_W);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE operator bool() const { return d_bv.get_bit(d_index); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE operator bool() const { return d_bv.get_bit(d_index); }
 
-  HLS_CONSTEXPR_EXTRA INLINE bool to_bool() const { return operator bool(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool to_bool() const { return operator bool(); }
 
   template <typename T>
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref& operator=(const T& val) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref& operator=(const T& val) {
     if (!!val)
       d_bv.set(d_index);
     else
@@ -6912,7 +6913,7 @@ struct _private_bit_ref {
   }
 
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<1, _private_bit_ref, _AP_W2, ap_private<_AP_W2,
+//  AP_INLINE ap_concat_ref<1, _private_bit_ref, _AP_W2, ap_private<_AP_W2,
 //  _AP_S2> >
 //  operator,(ap_private<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<1, _private_bit_ref, _AP_W2, ap_private<_AP_W2,
@@ -6921,7 +6922,7 @@ struct _private_bit_ref {
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<1, _private_bit_ref, _AP_W2,
+//  AP_INLINE ap_concat_ref<1, _private_bit_ref, _AP_W2,
 //  _private_range_ref<_AP_W2,
 //  _AP_S2> >
 //  operator,(const _private_range_ref<_AP_W2, _AP_S2> &a2) const {
@@ -6933,7 +6934,7 @@ struct _private_bit_ref {
 //  }
 //
 //  template <int _AP_W2, bool _AP_S2>
-//  INLINE ap_concat_ref<1, _private_bit_ref, 1, _private_bit_ref<_AP_W2,
+//  AP_INLINE ap_concat_ref<1, _private_bit_ref, 1, _private_bit_ref<_AP_W2,
 //  _AP_S2> > operator,(
 //      const _private_bit_ref<_AP_W2, _AP_S2> &a2) const {
 //    return ap_concat_ref<1, _private_bit_ref, 1,
@@ -6942,7 +6943,7 @@ struct _private_bit_ref {
 //        const_cast<_private_bit_ref<_AP_W2, _AP_S2>&>(a2));
 //  }
 //
-//  INLINE ap_concat_ref<1, _private_bit_ref, 1, _private_bit_ref>
+//  AP_INLINE ap_concat_ref<1, _private_bit_ref, 1, _private_bit_ref>
 //  operator,(
 //      const _private_bit_ref &a2) const {
 //    return ap_concat_ref<1, _private_bit_ref, 1, _private_bit_ref>(
@@ -6951,7 +6952,7 @@ struct _private_bit_ref {
 //  }
 //
 //  template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-//  INLINE ap_concat_ref<1, _private_bit_ref, _AP_W2 + _AP_W3,
+//  AP_INLINE ap_concat_ref<1, _private_bit_ref, _AP_W2 + _AP_W3,
 //                       ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
 //  operator,(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) const {
 //    return ap_concat_ref<1, _private_bit_ref, _AP_W2 + _AP_W3,
@@ -6962,7 +6963,7 @@ struct _private_bit_ref {
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE ap_concat_ref<
+//  AP_INLINE ap_concat_ref<
 //      1, _private_bit_ref, _AP_W2,
 //      af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
 //  operator,(const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2,
@@ -6979,7 +6980,7 @@ struct _private_bit_ref {
 //
 //  template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
 //            ap_o_mode _AP_O2, int _AP_N2>
-//  INLINE
+//  AP_INLINE
 //      ap_concat_ref<1, _private_bit_ref, 1,
 //                    af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2,
 //                    _AP_N2> >
@@ -6997,30 +6998,30 @@ struct _private_bit_ref {
 //  }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator==(const _private_bit_ref<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator==(const _private_bit_ref<_AP_W2, _AP_S2>& op) const {
     return get() == op.get();
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE bool operator!=(const _private_bit_ref<_AP_W2, _AP_S2>& op) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator!=(const _private_bit_ref<_AP_W2, _AP_S2>& op) const {
     return get() != op.get();
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE bool get() const { return operator bool(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool get() const { return operator bool(); }
 
   //  template <int _AP_W3>
-  //  INLINE void set(const ap_private<_AP_W3, false>& val) {
+  //  AP_INLINE void set(const ap_private<_AP_W3, false>& val) {
   //    operator=(val);
   //  }
 
-  //  INLINE bool operator~() const {
+  //  AP_INLINE bool operator~() const {
   //    bool bit = (d_bv)[d_index];
   //    return bit ? false : true;
   //  }
 
-  HLS_CONSTEXPR_EXTRA INLINE int length() const { return 1; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE int length() const { return 1; }
 
-  //  INLINE std::string to_string() const {
+  //  AP_INLINE std::string to_string() const {
   //    bool val = get();
   //    return val ? "1" : "0";
   //  }
@@ -7034,13 +7035,13 @@ struct _private_bit_ref {
 // avoid ambiguous errors
 #define OP_BIN_MIX_PTR(BIN_OP)                                           \
   template <typename PTR_TYPE, int _AP_W, bool _AP_S>                    \
-  INLINE PTR_TYPE* operator BIN_OP(PTR_TYPE* i_op,                       \
+  AP_INLINE PTR_TYPE* operator BIN_OP(PTR_TYPE* i_op,                       \
                                    const ap_private<_AP_W, _AP_S>& op) { \
     typename ap_private<_AP_W, _AP_S>::ValType op2 = op;                 \
     return i_op BIN_OP op2;                                              \
   }                                                                      \
   template <typename PTR_TYPE, int _AP_W, bool _AP_S>                    \
-  INLINE PTR_TYPE* operator BIN_OP(const ap_private<_AP_W, _AP_S>& op,   \
+  AP_INLINE PTR_TYPE* operator BIN_OP(const ap_private<_AP_W, _AP_S>& op,   \
                                    PTR_TYPE* i_op) {                     \
     typename ap_private<_AP_W, _AP_S>::ValType op2 = op;                 \
     return op2 BIN_OP i_op;                                              \
@@ -7054,13 +7055,13 @@ OP_BIN_MIX_PTR(-)
 // when ap_int<wa>'s width > 64, then trunc ap_int<w> to ap_int<64>
 #define OP_BIN_MIX_FLOAT(BIN_OP, C_TYPE)                              \
   template <int _AP_W, bool _AP_S>                                    \
-  INLINE C_TYPE operator BIN_OP(C_TYPE i_op,                          \
+  AP_INLINE C_TYPE operator BIN_OP(C_TYPE i_op,                          \
                                 const ap_private<_AP_W, _AP_S>& op) { \
     typename ap_private<_AP_W, _AP_S>::ValType op2 = op;              \
     return i_op BIN_OP op2;                                           \
   }                                                                   \
   template <int _AP_W, bool _AP_S>                                    \
-  INLINE C_TYPE operator BIN_OP(const ap_private<_AP_W, _AP_S>& op,   \
+  AP_INLINE C_TYPE operator BIN_OP(const ap_private<_AP_W, _AP_S>& op,   \
                                 C_TYPE i_op) {                        \
     typename ap_private<_AP_W, _AP_S>::ValType op2 = op;              \
     return op2 BIN_OP i_op;                                           \
@@ -7087,13 +7088,13 @@ OPS_MIX_FLOAT(double)
 // (unsigned) long long
 #define OP_BIN_MIX_INT(BIN_OP, C_TYPE, _AP_WI, _AP_SI, RTYPE)                  \
   template <int _AP_W, bool _AP_S>                                             \
-  HLS_CONSTEXPR_EXTRA INLINE                                                                       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE                                                                       \
       typename ap_private<_AP_WI, _AP_SI>::template RType<_AP_W, _AP_S>::RTYPE \
       operator BIN_OP(C_TYPE i_op, const ap_private<_AP_W, _AP_S>& op) {       \
     return ap_private<_AP_WI, _AP_SI>(i_op).operator BIN_OP(op);               \
   }                                                                            \
   template <int _AP_W, bool _AP_S>                                             \
-  HLS_CONSTEXPR_EXTRA INLINE                                                                       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE                                                                       \
       typename ap_private<_AP_W, _AP_S>::template RType<_AP_WI, _AP_SI>::RTYPE \
       operator BIN_OP(const ap_private<_AP_W, _AP_S>& op, C_TYPE i_op) {       \
     return op.operator BIN_OP(ap_private<_AP_WI, _AP_SI>(i_op));               \
@@ -7101,19 +7102,19 @@ OPS_MIX_FLOAT(double)
 
 #define OP_REL_MIX_INT(REL_OP, C_TYPE, _AP_W2, _AP_S2)                     \
   template <int _AP_W, bool _AP_S>                                         \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(const ap_private<_AP_W, _AP_S>& op,          \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(const ap_private<_AP_W, _AP_S>& op,          \
                               C_TYPE op2) {                                \
     return op.operator REL_OP(ap_private<_AP_W2, _AP_S2>(op2));            \
   }                                                                        \
   template <int _AP_W, bool _AP_S>                                         \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(C_TYPE op2,                                  \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(C_TYPE op2,                                  \
                               const ap_private<_AP_W, _AP_S, false>& op) { \
     return ap_private<_AP_W2, _AP_S2>(op2).operator REL_OP(op);            \
   }
 
 #define OP_ASSIGN_MIX_INT(ASSIGN_OP, C_TYPE, _AP_W2, _AP_S2)       \
   template <int _AP_W, bool _AP_S>                                 \
-  HLS_CONSTEXPR_EXTRA INLINE ap_private<_AP_W, _AP_S>& operator ASSIGN_OP(             \
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private<_AP_W, _AP_S>& operator ASSIGN_OP(             \
       ap_private<_AP_W, _AP_S>& op, C_TYPE op2) {                  \
     return op.operator ASSIGN_OP(ap_private<_AP_W2, _AP_S2>(op2)); \
   }
@@ -7125,7 +7126,7 @@ OPS_MIX_FLOAT(double)
     return i_op BIN_OP(op.get_VAL());                                          \
   }                                                                            \
   template <int _AP_W, bool _AP_S>                                             \
-  HLS_CONSTEXPR_EXTRA INLINE                                                                       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE                                                                       \
       typename ap_private<_AP_W, _AP_S>::template RType<_AP_WI, _AP_SI>::RTYPE \
       operator BIN_OP(const ap_private<_AP_W, _AP_S>& op, C_TYPE i_op) {       \
     return op.operator BIN_OP(i_op);                                           \
@@ -7133,7 +7134,7 @@ OPS_MIX_FLOAT(double)
 
 #define OP_ASSIGN_RSHIFT_INT(ASSIGN_OP, C_TYPE, _AP_W2, _AP_S2) \
   template <int _AP_W, bool _AP_S>                              \
-  HLS_CONSTEXPR_EXTRA INLINE ap_private<_AP_W, _AP_S>& operator ASSIGN_OP(          \
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private<_AP_W, _AP_S>& operator ASSIGN_OP(          \
       ap_private<_AP_W, _AP_S>& op, C_TYPE op2) {               \
     op = op.operator>>(op2);                                    \
     return op;                                                  \
@@ -7141,7 +7142,7 @@ OPS_MIX_FLOAT(double)
 
 #define OP_ASSIGN_LSHIFT_INT(ASSIGN_OP, C_TYPE, _AP_W2, _AP_S2) \
   template <int _AP_W, bool _AP_S>                              \
-  HLS_CONSTEXPR_EXTRA INLINE ap_private<_AP_W, _AP_S>& operator ASSIGN_OP(          \
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private<_AP_W, _AP_S>& operator ASSIGN_OP(          \
       ap_private<_AP_W, _AP_S>& op, C_TYPE op2) {               \
     op = op.operator<<(op2);                                    \
     return op;                                                  \
@@ -7200,14 +7201,14 @@ OPS_MIX_INT(ap_ulong, sizeof(ap_ulong) * 8, false)
 
 #define OP_BIN_MIX_RANGE(BIN_OP, RTYPE)                                     \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>               \
-  HLS_CONSTEXPR_EXTRA INLINE typename ap_private<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
+  HLS_CONSTEXPR_EXTRA AP_INLINE typename ap_private<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
                                                              _AP_S2>::RTYPE \
   operator BIN_OP(const _private_range_ref<_AP_W1, _AP_S1>& op1,            \
                   const ap_private<_AP_W2, _AP_S2>& op2) {                  \
     return ap_private<_AP_W1, false>(op1).operator BIN_OP(op2);             \
   }                                                                         \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>               \
-  HLS_CONSTEXPR_EXTRA INLINE typename ap_private<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
+  HLS_CONSTEXPR_EXTRA AP_INLINE typename ap_private<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
                                                              _AP_S2>::RTYPE \
   operator BIN_OP(const ap_private<_AP_W1, _AP_S1>& op1,                    \
                   const _private_range_ref<_AP_W2, _AP_S2>& op2) {          \
@@ -7216,13 +7217,13 @@ OPS_MIX_INT(ap_ulong, sizeof(ap_ulong) * 8, false)
 
 #define OP_ASSIGN_MIX_RANGE(ASSIGN_OP)                             \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>      \
-  HLS_CONSTEXPR_EXTRA INLINE ap_private<_AP_W1, _AP_S1>& operator ASSIGN_OP(           \
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private<_AP_W1, _AP_S1>& operator ASSIGN_OP(           \
       ap_private<_AP_W1, _AP_S1>& op1,                             \
       const _private_range_ref<_AP_W2, _AP_S2>& op2) {             \
     return op1.operator ASSIGN_OP(ap_private<_AP_W2, false>(op2)); \
   }                                                                \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>      \
-  HLS_CONSTEXPR_EXTRA INLINE _private_range_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(   \
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_range_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(   \
       _private_range_ref<_AP_W1, _AP_S1>& op1,                     \
       ap_private<_AP_W2, _AP_S2>& op2) {                           \
     ap_private<_AP_W1, false> tmp(op1);                            \
@@ -7233,12 +7234,12 @@ OPS_MIX_INT(ap_ulong, sizeof(ap_ulong) * 8, false)
 
 #define OP_REL_MIX_RANGE(REL_OP)                                               \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                  \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(const _private_range_ref<_AP_W1, _AP_S1>& op1,   \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(const _private_range_ref<_AP_W1, _AP_S1>& op1,   \
                               const ap_private<_AP_W2, _AP_S2>& op2) {         \
     return ap_private<_AP_W1, false>(op1).operator REL_OP(op2);                \
   }                                                                            \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                  \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(const ap_private<_AP_W1, _AP_S1>& op1,           \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(const ap_private<_AP_W1, _AP_S1>& op1,           \
                               const _private_range_ref<_AP_W2, _AP_S2>& op2) { \
     return op1.operator REL_OP(op2.operator ap_private<_AP_W2, false>());      \
   }
@@ -7277,13 +7278,13 @@ OP_REL_MIX_RANGE(!=)
 
 #define OP_BIN_MIX_BIT(BIN_OP, RTYPE)                                         \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                 \
-  HLS_CONSTEXPR_EXTRA INLINE typename ap_private<1, false>::template RType<_AP_W2, _AP_S2>::RTYPE \
+  HLS_CONSTEXPR_EXTRA AP_INLINE typename ap_private<1, false>::template RType<_AP_W2, _AP_S2>::RTYPE \
   operator BIN_OP(const _private_bit_ref<_AP_W1, _AP_S1>& op1,                \
                   const ap_private<_AP_W2, _AP_S2>& op2) {                    \
     return ap_private<1, false>(op1).operator BIN_OP(op2);                    \
   }                                                                           \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                 \
-  HLS_CONSTEXPR_EXTRA INLINE typename ap_private<_AP_W1, _AP_S1>::template RType<1, false>::RTYPE \
+  HLS_CONSTEXPR_EXTRA AP_INLINE typename ap_private<_AP_W1, _AP_S1>::template RType<1, false>::RTYPE \
   operator BIN_OP(const ap_private<_AP_W1, _AP_S1>& op1,                      \
                   const _private_bit_ref<_AP_W2, _AP_S2>& op2) {              \
     return op1.operator BIN_OP(ap_private<1, false>(op2));                    \
@@ -7291,13 +7292,13 @@ OP_REL_MIX_RANGE(!=)
 
 #define OP_ASSIGN_MIX_BIT(ASSIGN_OP)                           \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>  \
-  HLS_CONSTEXPR_EXTRA INLINE ap_private<_AP_W1, _AP_S1>& operator ASSIGN_OP(       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE ap_private<_AP_W1, _AP_S1>& operator ASSIGN_OP(       \
       ap_private<_AP_W1, _AP_S1>& op1,                         \
       _private_bit_ref<_AP_W2, _AP_S2>& op2) {                 \
     return op1.operator ASSIGN_OP(ap_private<1, false>(op2));  \
   }                                                            \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>  \
-  HLS_CONSTEXPR_EXTRA INLINE _private_bit_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP( \
+  HLS_CONSTEXPR_EXTRA AP_INLINE _private_bit_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP( \
       _private_bit_ref<_AP_W1, _AP_S1>& op1,                   \
       ap_private<_AP_W2, _AP_S2>& op2) {                       \
     ap_private<1, false> tmp(op1);                             \
@@ -7308,12 +7309,12 @@ OP_REL_MIX_RANGE(!=)
 
 #define OP_REL_MIX_BIT(REL_OP)                                               \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(const _private_bit_ref<_AP_W1, _AP_S1>& op1,   \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(const _private_bit_ref<_AP_W1, _AP_S1>& op1,   \
                               const ap_private<_AP_W2, _AP_S2>& op2) {       \
     return ap_private<_AP_W1, false>(op1).operator REL_OP(op2);              \
   }                                                                          \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(const ap_private<_AP_W1, _AP_S1>& op1,         \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(const ap_private<_AP_W1, _AP_S1>& op1,         \
                               const _private_bit_ref<_AP_W2, _AP_S2>& op2) { \
     return op1.operator REL_OP(ap_private<1, false>(op2));                   \
   }
@@ -7352,25 +7353,25 @@ OP_REL_MIX_BIT(!=)
 
 #define REF_REL_OP_MIX_INT(REL_OP, C_TYPE, _AP_W2, _AP_S2)                  \
   template <int _AP_W, bool _AP_S>                                          \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(const _private_range_ref<_AP_W, _AP_S>& op,   \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(const _private_range_ref<_AP_W, _AP_S>& op,   \
                               C_TYPE op2) {                                 \
     return (ap_private<_AP_W, false>(op))                                   \
         .                                                                   \
         operator REL_OP(ap_private<_AP_W2, _AP_S2>(op2));                   \
   }                                                                         \
   template <int _AP_W, bool _AP_S>                                          \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(C_TYPE op2,                                   \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(C_TYPE op2,                                   \
                               const _private_range_ref<_AP_W, _AP_S>& op) { \
     return ap_private<_AP_W2, _AP_S2>(op2).operator REL_OP(                 \
         ap_private<_AP_W, false>(op));                                      \
   }                                                                         \
   template <int _AP_W, bool _AP_S>                                          \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(const _private_bit_ref<_AP_W, _AP_S>& op,     \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(const _private_bit_ref<_AP_W, _AP_S>& op,     \
                               C_TYPE op2) {                                 \
     return (bool(op))REL_OP op2;                                            \
   }                                                                         \
   template <int _AP_W, bool _AP_S>                                          \
-  HLS_CONSTEXPR_EXTRA INLINE bool operator REL_OP(C_TYPE op2,                                   \
+  HLS_CONSTEXPR_EXTRA AP_INLINE bool operator REL_OP(C_TYPE op2,                                   \
                               const _private_bit_ref<_AP_W, _AP_S>& op) {   \
     return op2 REL_OP(bool(op));                                            \
   }
@@ -7400,7 +7401,7 @@ REF_REL_MIX_INT(ap_ulong, sizeof(ap_ulong) * 8, false)
 
 #define REF_BIN_OP_MIX_INT(BIN_OP, RTYPE, C_TYPE, _AP_W2, _AP_S2)              \
   template <int _AP_W, bool _AP_S>                                             \
-  HLS_CONSTEXPR_EXTRA INLINE                                                                       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE                                                                       \
       typename ap_private<_AP_W, false>::template RType<_AP_W2, _AP_S2>::RTYPE \
       operator BIN_OP(const _private_range_ref<_AP_W, _AP_S>& op,              \
                       C_TYPE op2) {                                            \
@@ -7409,7 +7410,7 @@ REF_REL_MIX_INT(ap_ulong, sizeof(ap_ulong) * 8, false)
         operator BIN_OP(ap_private<_AP_W2, _AP_S2>(op2));                      \
   }                                                                            \
   template <int _AP_W, bool _AP_S>                                             \
-  HLS_CONSTEXPR_EXTRA INLINE                                                                       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE                                                                       \
       typename ap_private<_AP_W2, _AP_S2>::template RType<_AP_W, false>::RTYPE \
       operator BIN_OP(C_TYPE op2,                                              \
                       const _private_range_ref<_AP_W, _AP_S>& op) {            \
@@ -7446,7 +7447,7 @@ REF_BIN_MIX_INT(ap_ulong, sizeof(ap_ulong) * 8, false)
 
 #define REF_BIN_OP(BIN_OP, RTYPE)                                             \
   template <int _AP_W, bool _AP_S, int _AP_W2, bool _AP_S2>                   \
-  HLS_CONSTEXPR_EXTRA INLINE                                                                      \
+  HLS_CONSTEXPR_EXTRA AP_INLINE                                                                      \
       typename ap_private<_AP_W, false>::template RType<_AP_W2, false>::RTYPE \
       operator BIN_OP(const _private_range_ref<_AP_W, _AP_S>& lhs,            \
                       const _private_range_ref<_AP_W2, _AP_S2>& rhs) {        \

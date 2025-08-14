@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -44,16 +44,17 @@ namespace internal {
 } // end of namespace internal
 
 // one-direction fence
+template <unsigned DELAY = 1>
 static void fence(const internal::fence_group &A, const internal::fence_group &B) {
   #pragma HLS inline
-  __fpga_fence_with_group(A.p, B.p);
+  __fpga_fence_with_group(A.p, B.p, DELAY);
 }
  
 // bi-direction fence
-template <class... Args>
+template <unsigned DELAY = 1, class... Args>
 void fence(Args&&... args) {
   #pragma HLS inline
-  __fpga_fence(internal::auto_type_convert(args)...);
+  __fpga_fence(DELAY, internal::auto_type_convert(args)...);
 }
 
 }
@@ -68,11 +69,12 @@ namespace internal {
   };
 } // end of namespace internal
 
+template <unsigned DELAY = 1>
 static void fence(const internal::fence_group &A, const internal::fence_group &B) {
   std::atomic_thread_fence(std::memory_order_seq_cst);
 }
 
-template <class... Args>
+template <unsigned DELAY = 1, class... Args>
 void fence(Args&&... args) {
   std::atomic_thread_fence(std::memory_order_seq_cst);
 }

@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -38,7 +38,7 @@ ap_fixed<W_,I_> exp(ap_fixed<W_,I_> x)
             if (!x_l[2]) y = "0x1.8p0";
         } else {
             if (!x_l[2]) y[1] = 1;
-            if (x_l[2]|x_l[0]) y[0] = 1;
+            if (x_l[2]||x_l[0]) y[0] = 1;
         }
         if (I_<2) { // overflow
             if (y[1]) {
@@ -58,10 +58,10 @@ ap_fixed<W_,I_> exp(ap_fixed<W_,I_> x)
         if ((x_l[4]!=x_l[3])||((x_l_int==1)&&(x_l_fract>=ap_ufixed<2,0>("0x0.8p0")))) { // overflow
             if (!x_l[4]) y = "0x3.cp0";
         } else {
-            if (!x_l[4]&((x_l[1]&x_l[0])|x_l[2])) y[3] = 1;
-            if (!x_l[4]&((!x_l[2]&!x_l[0])|(!x_l[1]&x_l[0]))) y[2] = 1;
-            if ((!x_l[4]&x_l[1]&!x_l[0])|(!x_l[4]&x_l[2])|(x_l[2]&x_l[0])|(x_l[2]&x_l[1])) y[1] = 1;
-            if ((!x_l[2]&!x_l[1]&x_l[0])|(!x_l[2]&x_l[1]&!x_l[0])|(x_l[2]&!x_l[1]&!x_l[0])|(x_l[2]&x_l[1]&x_l[0])|(x_l[4]&!x_l[3])) y[0] = 1;
+            if (!x_l[4]&&((x_l[1]&&x_l[0])||x_l[2])) y[3] = 1;
+            if (!x_l[4]&&((!x_l[2]&&!x_l[0])||(!x_l[1]&&x_l[0]))) y[2] = 1;
+            if ((!x_l[4]&&x_l[1]&&!x_l[0])||(!x_l[4]&&x_l[2])||(x_l[2]&&x_l[0])||(x_l[2]&&x_l[1])) y[1] = 1;
+            if ((!x_l[2]&&!x_l[1]&&x_l[0])||(!x_l[2]&&x_l[1]&&!x_l[0])||(x_l[2]&&!x_l[1]&&!x_l[0])||(x_l[2]&&x_l[1]&&x_l[0])||(x_l[4]&&!x_l[3])) y[0] = 1;
         }
         if (I_<3) { // overflow
             bool overf = 0;
@@ -103,7 +103,7 @@ ap_fixed<W_,I_> exp(ap_fixed<W_,I_> x)
             x_msb_ind(2,0) = x_l(6,4);
             ap_uint<4> x_lsb_ind;
             x_lsb_ind(3,0) = x_l(3,0);
-            ap_ufixed<4,-1> x_lsb = x_l;
+            // ap_ufixed<4,-1> x_lsb = x_l;
 
 //            const ap_ufixed<11,5> exp_x_msb_table[64] = {
 ////                0, 0, 0, 0, 29.21875, 25.796875, 22.765625, 20.078125, 
@@ -186,7 +186,7 @@ ap_fixed<W_,I_> exp(ap_fixed<W_,I_> x)
             x_msb_ind_1(3,0) = x_l(13,10);
             ap_uint<5> x_msb_ind_2;
             x_msb_ind_2(4,0) = x_l(9,5);
-            ap_ufixed<5,-1> x_msb_2 = x_l;
+            // ap_ufixed<5,-1> x_msb_2 = x_l;
             ap_uint<5> x_lsb_ind;
             x_lsb_ind(4,0) = x_l(4,0);
             //ap_ufixed<5,-6> x_lsb = x_l;
@@ -966,7 +966,7 @@ ap_fixed<WO_,I_> exp_core(ap_fixed<WI_,I_> x)
         //w = 7; we = 2
         const static int w =  7;
         const static int we = 2;
-        const static int wf = 5;
+        // const static int wf = 5;
         //truncate if WI>7
         ap_fixed<w,we> x_l = x;
         ap_ufixed<3,2> y = 0;
@@ -979,14 +979,14 @@ ap_fixed<WO_,I_> exp_core(ap_fixed<WI_,I_> x)
         } else {
             if (!x_l[6]) y[1] = 1;
             //e(00.01100 - 0.11111) = 1.1 
-            if (!x_l[6]&(x_l[4]|(x_l[2]&x_l[3]))) y[0]=1;
-            if (!x_l[6]&x_l[2]&x_l[3]) y[0]=1;//00.01100 - 00.01111
-            if (x_l[6]&((x_l[4]&x_l[3])|x_l[5])) y[0] = 1;//11.01100-11.11111
-            if (x_l[6]&x_l[5]&!x_l[4]&x_l[3]&!x_l[2]&x_l[1]) y[0] = 1;//11.01010-11.01011
+            if (!x_l[6] && (x_l[4] || (x_l[2] && x_l[3]))) y[0] = 1;
+            if (!x_l[6] && x_l[2] && x_l[3]) y[0] = 1; // 00.01100 - 00.01111
+            if (x_l[6] && ((x_l[4] && x_l[3]) || x_l[5])) y[0] = 1; // 11.01100-11.11111
+            if (x_l[6] && x_l[5] && !x_l[4] && x_l[3] && !x_l[2] && x_l[1]) y[0] = 1; // 11.01010-11.01011
         }
         y += delta;
         //if (I_<2) { // overflow
-            if (y[1]|y[2]) {
+            if (y[1] || y[2]) {
                 y[2] = 0;
                 y[1] = 0;
                 y[0] = 1;
@@ -1170,15 +1170,15 @@ ap_fixed<WO_,I_> exp_core(ap_fixed<WI_,I_> x)
                 }
             }
         } else {
-            const static int g = 2;
-            const static int Maxprecision = 25;//we+FO_+g=11+12+2=25
+            // const static int g = 2;
+            // const static int Maxprecision = 25;//we+FO_+g=11+12+2=25
             ap_uint<5> x_msb_ind_1;
             x_msb_ind_1[4] = x_l[w-1];
             x_msb_ind_1(3,0) = x_l(wf+2,wf-1);
 
             ap_uint<5> x_msb_ind_2;
             x_msb_ind_2(4,0) = x_l(wf-2,wf-6);
-            ap_ufixed<5,-1> x_msb_2 = x_l;
+            // ap_ufixed<5,-1> x_msb_2 = x_l;
 
             ap_uint<7> x_msb_ind_3;
             x_msb_ind_3(6,0) = x_l(wf-7,wf-13);
@@ -1323,8 +1323,8 @@ ap_fixed<WO_,I_> exp_core(ap_fixed<WI_,I_> x)
                 }
             }
         } else {
-            const static int g=4;
-            const static int Maxprecision = 51;//24+23+4 = 51
+            // const static int g=4;
+            // const static int Maxprecision = 51;//24+23+4 = 51
             ap_uint<8> x_msb_ind_1;
             x_msb_ind_1[7] = x_l[w-1];
             x_msb_ind_1(6,0) = x_l(wf+3,wf-3);
@@ -1626,8 +1626,8 @@ ap_fixed<WO_,I_> exp_core(ap_fixed<WI_,I_> x)
                 }
             }
         } else {
-            const static int g=4;
-            const static int Maxprecision=69;//33+32+4;
+            // const static int g=4;
+            // const static int Maxprecision=69;//33+32+4;
             ap_uint<8> x_msb_ind_1;
             x_msb_ind_1[7] = x_l[w-1];
 
@@ -1791,7 +1791,7 @@ ap_fixed<WO_,I_> exp_core(ap_fixed<WI_,I_> x)
             //8*25
             ap_ufixed<25,-44> f_x_msb_4_5_lsb = x_msb_5_lsb * x_msb_4;//(Z_5+Z_lsb)*Z_4 // 1u
             //6*8
-            ap_ufixed<6,-37> f_x_msb_4_s = f_x_msb_4; 
+            // ap_ufixed<6,-37> f_x_msb_4_s = f_x_msb_4; 
             ap_ufixed<6,-63> exp_x_msb_4_5_lsb_m_1_m1 = x_msb_5 * f_x_msb_4;//Z_5 * f(Z_4) //1u 
               
             ap_ufixed<10,-59> exp_x_msb_4_5_lsb_m_1_m2 = 0;
@@ -2092,7 +2092,6 @@ ap_uint<I_> exp(ap_uint<I_> x) {
 template<int W, int I>
 ap_fixed<W,I> expm1(ap_fixed<W,I> x) {
     ap_fixed<W,I> result, tmp;
-    ap_ufixed<1,1> one = 1;
     if(I < 1) {
         result = 0;
     } else {
@@ -2182,10 +2181,10 @@ ap_fixed<W,I> exp2(ap_fixed<W,I> x) {
                 y = "0x3.cp0";
             }
         } else {
-            if((!x_l[3])&(x_l[2])) y[3] = 1;
-            if(((!x_l[3])&(!x_l[2])) | ((!x_l[3])&x_l[2]&x_l[1]&x_l[0])) y[2] = 1;
-            if( (x_l[3]&x_l[2]) | ((!x_l[3])&( (x_l[2]&(x_l[1]^x_l[0])) | ((!x_l[2])&x_l[1]&x_l[0] )))) y[1] = 1;
-            if((x_l[3]&(!x_l[2])) | (x_l[1]&((x_l[0]&x_l[2]) | ((!x_l[0])&(!x_l[3]))))) y[0] =1;
+            if((!x_l[3])&&(x_l[2])) y[3] = 1;
+            if(((!x_l[3])&&(!x_l[2])) || ((!x_l[3])&&x_l[2]&&x_l[1]&&x_l[0])) y[2] = 1;
+            if( (x_l[3]&&x_l[2]) || ((!x_l[3])&&( (x_l[2]&&(x_l[1]^x_l[0])) || ((!x_l[2])&&x_l[1]&&x_l[0] )))) y[1] = 1;
+            if((x_l[3]&&(!x_l[2])) || (x_l[1]&&((x_l[0]&&x_l[2]) || ((!x_l[0])&&(!x_l[3]))))) y[0] =1;
         }
 
         if(I<3) {
@@ -2881,18 +2880,18 @@ ap_fixed<W_,I_> exp10(ap_fixed<W_,I_> x) {
 		ap_fixed<3,2> x_l = x;
 		ap_ufixed<2,1> y = 0;
 		if(x_l[2]) {
-			if(x_l[1]&x_l[0]) {
+			if(x_l[1]&&x_l[0]) {
 				y = ap_ufixed<2,1>("0x0.8p0");
 			}
 		} else {
-			if(x_l[1]|x_l[0]) {
+			if(x_l[1]||x_l[0]) {
 				y = ap_ufixed<2,1>("0x1.8p0");
 			} else {
 				y = ap_ufixed<2,1>("0x1.0p0");
 			}
 		}
 		if(I_<2) {
-			bool overf = 0;
+			// bool overf = 0;
 			if(y[1]) {
 				y[1] = 0;
 				y[0] = 1;

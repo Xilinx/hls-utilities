@@ -1,40 +1,11 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 #if defined __fpga_dsp && defined __fpga_check
 
+using namespace dspInternal;
+
 #define STAGE(reg) ((flags&reg)? 1: 0)
-
-// register flags
-
-constexpr int64_t NO_REG      = 0x00000000;
-constexpr int64_t REG_A1      = 0x00000001;
-constexpr int64_t REG_A2      = 0x00000002;
-constexpr int64_t REG_B1      = 0x00000004;
-constexpr int64_t REG_B2      = 0x00000008;
-constexpr int64_t REG_D       = 0x00000010;
-constexpr int64_t REG_AD      = 0x00000020;
-constexpr int64_t REG_M       = 0x00000040;
-constexpr int64_t REG_C       = 0x00000080;
-constexpr int64_t REG_P       = 0x00000100;
-
-
-// DSP func_index enum
-enum DSPOpCodes {
-    DSP_mul_add,
-    DSP_mul_sub,
-    DSP_mul_rev_sub,
-    DSP_add_mul_add,
-    DSP_add_mul_sub,
-    DSP_sub_mul_add,
-    DSP_sub_mul_sub,
-    DSP_mul_acc,
-    DSP_add_mul_acc,
-    DSP_sub_mul_rev_sub,
-    DSP_cascade_mul_add,
-    DSP_cascade_add_mul_add,
-    DSP_add_mul_rev_sub
-};
 
 namespace {
       C_t C0 = 0;
@@ -215,41 +186,55 @@ sub_mul_rev_sub(
 
 template <int64_t flags> 
 class acc {
-static_assert(STAGE(REG_P), "Register P must be used for accumulation");
-private : 
+  static_assert(STAGE(REG_P), "Register P must be used for accumulation");
+
+ private:
   C_t mAcc;
-public: 
-   acc() {
-      __fpga_check(flags);
-   }
-   C_t mul_acc(
-    A_t a,
-    B_t b,
-    bool init){
 #ifndef __HLS_SYN__
-      mAcc = init ? (C_t)(a * b) : (C_t)(a * b + mAcc);
-      return mAcc;
-#else
-      R_t res;
-      __fpga_dsp(&res, DSP_mul_acc, flags, &D0, &a, &b, &C0, init, &mAcc);
-      return res.pcout;
+  bool mHasInit = false;
+  bool mIsUsed = false;
 #endif
-    }
-    
-   C_t add_mul_acc(
-    D_t d,
-    A_t a,
-    B_t b,
-    bool init){
+
+ public:
+  acc() { __fpga_check(flags); }
+  ~acc() {
 #ifndef __HLS_SYN__
-      mAcc = init ? (C_t)((a + d) * b) : (C_t)((a + d) * b + mAcc);
-      return mAcc;
-#else
-      R_t res;
-      __fpga_dsp(&res, DSP_add_mul_acc, flags, &d, &a, &b, &C0, init, &mAcc);
-      return res.pcout;
+    if (mIsUsed && !mHasInit) assert(false && "Init should be used in accumulator");
 #endif
+  }
+  C_t mul_acc(A_t a, B_t b, bool init) {
+#ifndef __HLS_SYN__
+    mIsUsed = true;
+    if (init) {
+      mHasInit = true;
+      mAcc = (C_t)(a * b);
+    } else {
+      mAcc = (C_t)(a * b + mAcc);
     }
+    return mAcc;
+#else
+    R_t res;
+    __fpga_dsp(&res, DSP_mul_acc, flags, &D0, &a, &b, &C0, init, &mAcc);
+    return res.pcout;
+#endif
+  }
+
+  C_t add_mul_acc(D_t d, A_t a, B_t b, bool init) {
+#ifndef __HLS_SYN__
+    mIsUsed = true;
+    if (init) {
+      mHasInit = true;
+      mAcc = (C_t)((a + d) * b);
+    } else {
+      mAcc = ((a + d) * b + mAcc);
+    }
+    return mAcc;
+#else
+    R_t res;
+    __fpga_dsp(&res, DSP_add_mul_acc, flags, &d, &a, &b, &C0, init, &mAcc);
+    return res.pcout;
+#endif
+  }
 };
 
 template <int64_t flags> 

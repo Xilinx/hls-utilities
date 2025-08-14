@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 #if AP_INT_MAX_UNIT >= 1
 #ifndef APINT_TYPE_PREFIX

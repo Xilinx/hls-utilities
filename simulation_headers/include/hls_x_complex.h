@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -48,7 +48,6 @@ public:
   inline x_complex(const T &r, const T &i) : re(r), im(i){};
 
   inline x_complex(const T &r) : re(r), im(0){};
-
 
   inline x_complex(const std::complex<T> &z) {
     x_complex<T> tmp(z.real(), z.imag());
@@ -106,8 +105,9 @@ public:
   };
   template <typename T2>
   inline x_complex<T> &operator*=(const x_complex<T2> &rhs) {
-    x_complex<T> tmp(rhs.real(), rhs.imag());
-    *this *= tmp;
+    x_complex<T2> tmp(rhs);
+    x_complex<T> tmp2(tmp.real(), tmp.imag());
+    *this *= tmp2;
     return *this;
   };
 
@@ -122,8 +122,9 @@ public:
     return tmp;
   }
   template <typename T2> inline MULT_RT operator*(const x_complex<T2> &rhs) {
-    x_complex<T> tmp(rhs.real(), rhs.imag());
-    MULT_RT res = *this * tmp;
+    x_complex<T2> tmp(rhs);
+    x_complex<T> tmp2(tmp.real(), tmp.imag());
+    MULT_RT res = *this * tmp2;
     return res;
   };
 
@@ -185,10 +186,8 @@ public:
   template <typename T2>
   inline x_complex<T> operator+=(const x_complex<T2> &rhs) {
     x_complex<T2> tmp(rhs);
-    x_complex<T> tmp2(*this);
-    tmp2.re += tmp.real();
-    tmp2.im += tmp.imag();
-    *this = tmp2;
+    x_complex<T> tmp2(tmp.real(), tmp.imag());
+    *this += tmp2;
     return *this;
   };
 
@@ -353,7 +352,7 @@ template <typename T> x_complex<T> x_conj(x_complex<T> &din) {
   return x_conj(tmp);
 }
 
-template <int W, int I> void set_to_one(x_complex<ap_fixed<W, I> > &a) {
+template <int W, int I> void set_to_one(x_complex<ap_fixed<W, I>> &a) {
   ap_int<W> tmp_sat = ((ap_int<W - I + 1>)1 << (W - I)) - 1;
   ap_fixed<W, I> tmp;
   tmp.range() = tmp_sat;

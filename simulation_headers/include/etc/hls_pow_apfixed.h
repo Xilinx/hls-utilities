@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 
 #ifndef _X_HLS_POW_APFIXED_H_
@@ -245,7 +245,7 @@ ap_fixed<W_,I_> pown(ap_fixed<W_,I_> x, int n) {
        const static int WO_e = F_ + I_e;
        ap_fixed<33,33> max_n = 0;
        max_n[we_n-1] = 1;
-       ap_ufixed<32,32> n_pos = fabs_fixed(ap_fixed<33,33>(n));
+       // ap_ufixed<32,32> n_pos = fabs_fixed(ap_fixed<33,33>(n));
        ap_ufixed<WO_e,I_e> exp_r=0;
        bool ovf = 0;
        ap_ufixed<W_,I_> x_pos = fabs_fixed((ap_fixed<W_+1,I_+1>)x);

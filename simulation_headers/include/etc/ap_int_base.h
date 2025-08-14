@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -125,7 +125,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
  static_assert(_AP_W > 0, "ap_int_base bitwidth must be positive");
 
  private:
-  HLS_CONSTEXPR INLINE NODEBUG int countLeadingOnes() const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG int countLeadingOnes() const {
 #if (defined __AP_INT_WARNING__) && (!defined __SYNTHESIS__)
     return (Base::V).countLeadingOnes();
 #else
@@ -190,17 +190,17 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
    * ----------------------------------------------------------------
    */
   /// default ctor
-  INLINE NODEBUG ap_int_base() = default;
+  AP_INLINE AP_NODEBUG ap_int_base() = default;
 
   /// copy ctor
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG ap_int_base(const ap_int_base<_AP_W2, _AP_S2>& op):Base(op.V) {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_int_base(const ap_int_base<_AP_W2, _AP_S2>& op):Base(op.V) {
     Base::V = op.V;
   }
 
   /// volatile copy ctor
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_int_base(const volatile ap_int_base<_AP_W2, _AP_S2>& op) {
+  AP_INLINE AP_NODEBUG ap_int_base(const volatile ap_int_base<_AP_W2, _AP_S2>& op) {
     Base::V = op.V;
   }
 
@@ -215,7 +215,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
 /// from all c types.
 #define CTOR_FROM_INT(Type, Size, Signed) \
-  HLS_CONSTEXPR INLINE NODEBUG ap_int_base(const Type op):Base(op) { Base::V = op; }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_int_base(const Type op):Base(op) { Base::V = op; }
 
   CTOR_FROM_INT(bool, 1, false)
   CTOR_FROM_INT(char, 8, CHAR_IS_SIGNED)
@@ -233,13 +233,13 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   /// ctor from half.
   //  TODO optimize
-  INLINE NODEBUG ap_int_base(half op) {
+  AP_INLINE AP_NODEBUG ap_int_base(half op) {
     ap_int_base<_AP_W, _AP_S> t((float)op);
     Base::V = t.V;
   }
 
   /// ctor from float.
-  INLINE NODEBUG ap_int_base(float op) {
+  AP_INLINE AP_NODEBUG ap_int_base(float op) {
     const int BITS = FLOAT_MAN + FLOAT_EXP + 1;
     ap_int_base<BITS, false> reg;
     reg.V = floatToRawBits(op);
@@ -298,7 +298,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   /// ctor from double.
-  INLINE NODEBUG ap_int_base(double op) {
+  AP_INLINE AP_NODEBUG ap_int_base(double op) {
     const int BITS = DOUBLE_MAN + DOUBLE_EXP + 1;
     ap_int_base<BITS, false> reg;
     reg.V = doubleToRawBits(op);
@@ -359,24 +359,24 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   /// from higer rank type.
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int_base(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int_base(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     op.checkOverflowCsimFix(_AP_W, _AP_S);
     Base::V = op.to_ap_int_base().V;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_int_base(const ap_range_ref<_AP_W2, _AP_S2>& ref) {
+  AP_INLINE AP_NODEBUG ap_int_base(const ap_range_ref<_AP_W2, _AP_S2>& ref) {
     Base::V = (ref.get()).V;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_int_base(const ap_bit_ref<_AP_W2, _AP_S2>& ref) {
+  AP_INLINE AP_NODEBUG ap_int_base(const ap_bit_ref<_AP_W2, _AP_S2>& ref) {
     Base::V = ref.operator bool();
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_int_base(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& ref) {
+  AP_INLINE AP_NODEBUG ap_int_base(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& ref) {
     const ap_int_base<ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>::_AP_WR,
                       false>
         tmp = ref.get();
@@ -386,7 +386,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   /* radix has default value in set */
 
 #ifndef __SYNTHESIS__
-  INLINE NODEBUG ap_int_base(const char* s, signed char rd = 0) {
+  AP_INLINE AP_NODEBUG ap_int_base(const char* s, signed char rd = 0) {
     AP_ASSERT(0 != s, "ap_int<> is being initialized with a NULL pointer which is not a valid C string");
     if (rd == 0)
       rd = guess_radix(s);
@@ -396,13 +396,13 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 #else
   // XXX __builtin_bit_from_string(...) requires const C string and radix.
-  INLINE NODEBUG ap_int_base(const char* s) {
+  AP_INLINE AP_NODEBUG ap_int_base(const char* s) {
     typeof(Base::V) t;
     _ssdm_string2bits((void*)(&t), (const char*)(s), 10, _AP_W, _AP_S,
                       AP_TRN, AP_WRAP, 0, _AP_C99);
     Base::V = t;
   }
-  INLINE NODEBUG ap_int_base(const char* s, signed char rd) {
+  AP_INLINE AP_NODEBUG ap_int_base(const char* s, signed char rd) {
     typeof(Base::V) t;
     _ssdm_string2bits((void*)(&t), (const char*)(s), rd, _AP_W, _AP_S,
                       AP_TRN, AP_WRAP, 0, _AP_C99);
@@ -412,65 +412,65 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_int_base(
+  AP_INLINE AP_NODEBUG ap_int_base(
       const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
     Base::V = (val.get()).V;
   }
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_int_base(
+  AP_INLINE AP_NODEBUG ap_int_base(
       const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& val) {
     Base::V = val.operator bool();
   }
 
-  INLINE NODEBUG ap_int_base read() volatile {
+  AP_INLINE AP_NODEBUG ap_int_base read() volatile {
     /*AP_DEBUG(printf("call read %d\n", Base::V););*/
     ap_int_base ret;
     ret.V = Base::V;
     return ret;
   }
 
-  INLINE NODEBUG void write(const ap_int_base<_AP_W, _AP_S>& op2) volatile {
+  AP_INLINE AP_NODEBUG void write(const ap_int_base<_AP_W, _AP_S>& op2) volatile {
     /*AP_DEBUG(printf("call write %d\n", op2.V););*/
     *((volatile typename Base::DataType *)(&(Base::V))) = op2.V; 
   }
 
   /* Another form of "write".*/
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG void operator=(
+  AP_INLINE AP_NODEBUG void operator=(
       const volatile ap_int_base<_AP_W2, _AP_S2>& op2) volatile {
     *((volatile typename Base::DataType *)(&(Base::V))) = op2.V; 
   }
 
-  INLINE NODEBUG void operator=(
+  AP_INLINE AP_NODEBUG void operator=(
       const volatile ap_int_base<_AP_W, _AP_S>& op2) volatile {
     *((volatile typename Base::DataType *)(&(Base::V))) = op2.V; 
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG void operator=(const ap_int_base<_AP_W2, _AP_S2>& op2) volatile {
+  AP_INLINE AP_NODEBUG void operator=(const ap_int_base<_AP_W2, _AP_S2>& op2) volatile {
     *((volatile typename Base::DataType *)(&(Base::V))) = op2.V; 
   }
 
-  INLINE NODEBUG void operator=(const ap_int_base<_AP_W, _AP_S>& op2) volatile {
+  AP_INLINE AP_NODEBUG void operator=(const ap_int_base<_AP_W, _AP_S>& op2) volatile {
     *((volatile typename Base::DataType *)(&(Base::V))) = op2.V; 
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_int_base& operator=(
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(
       const volatile ap_int_base<_AP_W2, _AP_S2>& op2) {
     Base::V = op2.V;
     return *this;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG ap_int_base& operator=(const ap_int_base<_AP_W2, _AP_S2>& op2) {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_int_base& operator=(const ap_int_base<_AP_W2, _AP_S2>& op2) {
     Base::V = op2.V;
     return *this;
   }
 
-  INLINE NODEBUG ap_int_base& operator=(const volatile ap_int_base<_AP_W, _AP_S>& op2) {
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(const volatile ap_int_base<_AP_W, _AP_S>& op2) {
     Base::V = op2.V;
     return *this;
   }
@@ -478,14 +478,14 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #ifndef _MSC_VER
   ap_int_base& operator=(const ap_int_base<_AP_W, _AP_S>& op2) = default;
 #else
-  HLS_CONSTEXPR INLINE NODEBUG ap_int_base& operator=(const ap_int_base<_AP_W, _AP_S>& op2) {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_int_base& operator=(const ap_int_base<_AP_W, _AP_S>& op2) {
     Base::V = op2.V;
     return *this;
   }
 #endif
 
 #define ASSIGN_OP_FROM_INT(Type, Size, Signed) \
-  HLS_CONSTEXPR INLINE NODEBUG ap_int_base& operator=(Type op) {     \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_int_base& operator=(Type op) {     \
     Base::V = op;                              \
     return *this;                              \
   }
@@ -506,19 +506,19 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #undef ASSIGN_OP_FROM_INT
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_int_base& operator=(const ap_bit_ref<_AP_W2, _AP_S2>& op2) {
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(const ap_bit_ref<_AP_W2, _AP_S2>& op2) {
     Base::V = (bool)op2;
     return *this;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_int_base& operator=(const ap_range_ref<_AP_W2, _AP_S2>& op2) {
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(const ap_range_ref<_AP_W2, _AP_S2>& op2) {
     Base::V = (ap_int_base<_AP_W2, false>(op2)).V;
     return *this;
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_int_base& operator=(
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(
       const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& op2) {
     Base::V = op2.get().V;
     return *this;
@@ -526,7 +526,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_int_base& operator=(
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     Base::V = op.to_ap_int_base().V;
     return *this;
@@ -534,7 +534,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_int_base& operator=(
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(
       const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     Base::V = (bool)op;
     return *this;
@@ -542,7 +542,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_int_base& operator=(
+  AP_INLINE AP_NODEBUG ap_int_base& operator=(
       const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     Base::V = ((const ap_int_base<_AP_W2, false>)(op)).V;
     return *this;
@@ -552,40 +552,40 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   // types, but this implicit conversion is relied on in hls_cordic.h and hls_rsr.h.
   // For example:
   //     int d_exp = fps_x.exp - fps_y.exp;
-  HLS_CONSTEXPR INLINE NODEBUG operator RetType() const { return (RetType)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG operator RetType() const { return (RetType)(Base::V); }
 
   /* Explicit conversions to C types.
    * ----------------------------------------------------------------
    */
-  HLS_CONSTEXPR INLINE NODEBUG bool to_bool() const { return (bool)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG char to_char() const { return (char)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG signed char to_schar() const { return (signed char)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG unsigned char to_uchar() const { return (unsigned char)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG short to_short() const { return (short)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG unsigned short to_ushort() const { return (unsigned short)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG int to_int() const { return (int)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG unsigned to_uint() const { return (unsigned)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG long to_long() const { return (long)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG unsigned long to_ulong() const { return (unsigned long)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG ap_slong to_int64() const { return (ap_slong)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG ap_ulong to_uint64() const { return (ap_ulong)(Base::V); }
-  INLINE NODEBUG half to_half() const { return (float)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG float to_float() const { return (float)(Base::V); }
-  HLS_CONSTEXPR INLINE NODEBUG double to_double() const { return (double)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool to_bool() const { return (bool)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG char to_char() const { return (char)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG signed char to_schar() const { return (signed char)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG unsigned char to_uchar() const { return (unsigned char)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG short to_short() const { return (short)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG unsigned short to_ushort() const { return (unsigned short)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG int to_int() const { return (int)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG unsigned to_uint() const { return (unsigned)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG long to_long() const { return (long)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG unsigned long to_ulong() const { return (unsigned long)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_slong to_int64() const { return (ap_slong)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_ulong to_uint64() const { return (ap_ulong)(Base::V); }
+  AP_INLINE AP_NODEBUG half to_half() const { return (float)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG float to_float() const { return (float)(Base::V); }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG double to_double() const { return (double)(Base::V); }
 
   // TODO decide if user-defined conversion should be provided.
 #if 0
-  INLINE operator char() const { return (char)(Base::V); }
-  INLINE operator signed char() const { return (signed char)(Base::V); }
-  INLINE operator unsigned char() const { return (unsigned char)(Base::V); }
-  INLINE operator short() const { return (short)(Base::V); }
-  INLINE operator unsigned short() const { return (unsigned short)(Base::V); }
-  INLINE operator int() const { return (int)(Base::V); }
-  INLINE operator unsigned int () const { return (unsigned)(Base::V); }
-  INLINE operator long () const { return (long)(Base::V); }
-  INLINE operator unsigned long () const { return (unsigned long)(Base::V); }
-  INLINE operator ap_slong () { return (ap_slong)(Base::V); }
-  INLINE operator ap_ulong () { return (ap_ulong)(Base::V); }
+  AP_INLINE operator char() const { return (char)(Base::V); }
+  AP_INLINE operator signed char() const { return (signed char)(Base::V); }
+  AP_INLINE operator unsigned char() const { return (unsigned char)(Base::V); }
+  AP_INLINE operator short() const { return (short)(Base::V); }
+  AP_INLINE operator unsigned short() const { return (unsigned short)(Base::V); }
+  AP_INLINE operator int() const { return (int)(Base::V); }
+  AP_INLINE operator unsigned int () const { return (unsigned)(Base::V); }
+  AP_INLINE operator long () const { return (long)(Base::V); }
+  AP_INLINE operator unsigned long () const { return (unsigned long)(Base::V); }
+  AP_INLINE operator ap_slong () { return (ap_slong)(Base::V); }
+  AP_INLINE operator ap_ulong () { return (ap_ulong)(Base::V); }
 #endif
 
   /* Helper methods.
@@ -595,17 +595,17 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
    * but calling a volatile function is ok.
    * XXX deleted non-volatile version.
    */
-  INLINE NODEBUG int length() const volatile { return _AP_W; }
-  HLS_CONSTEXPR INLINE NODEBUG int length() const { return _AP_W; }
+  AP_INLINE AP_NODEBUG int length() const volatile { return _AP_W; }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG int length() const { return _AP_W; }
 
   /*Return true if the value of ap_int_base instance is zero*/
-  HLS_CONSTEXPR INLINE NODEBUG bool iszero() const { return Base::V == 0; }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool iszero() const { return Base::V == 0; }
 
   /*Return true if the value of ap_int_base instance is zero*/
-  HLS_CONSTEXPR INLINE NODEBUG bool is_zero() const { return Base::V == 0; }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool is_zero() const { return Base::V == 0; }
 
   /* x < 0 */
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool sign() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool sign() const {
     if (_AP_S &&
         _AP_ROOT_op_get_bit(Base::V, _AP_W - 1))
       return true;
@@ -614,13 +614,13 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   /* x[i] = 0 */
-  INLINE NODEBUG void clear(int i) {
+  AP_INLINE AP_NODEBUG void clear(int i) {
     AP_ASSERT(i >= 0 && i < _AP_W, "position out of range");
     Base::V = _AP_ROOT_op_set_bit(Base::V, i, 0);
   }
 
   /* x[i] = !x[i]*/
-  INLINE NODEBUG void invert(int i) {
+  AP_INLINE AP_NODEBUG void invert(int i) {
     AP_ASSERT(i >= 0 && i < _AP_W, "position out of range");
     bool val = _AP_ROOT_op_get_bit(Base::V, i);
     if (val)
@@ -629,29 +629,29 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
       Base::V = _AP_ROOT_op_set_bit(Base::V, i, 1);
   }
 
-  INLINE NODEBUG bool test(int i) const {
+  AP_INLINE AP_NODEBUG bool test(int i) const {
     AP_ASSERT(i >= 0 && i < _AP_W, "position out of range");
     return _AP_ROOT_op_get_bit(Base::V, i);
   }
 
   // Get self. For ap_concat_ref expansion.
-  HLS_CONSTEXPR INLINE NODEBUG ap_int_base& get() { return *this; }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG ap_int_base& get() { return *this; }
 
   // Set the ith bit into 1
-  INLINE NODEBUG void set(int i) {
+  AP_INLINE AP_NODEBUG void set(int i) {
     AP_ASSERT(i >= 0 && i < _AP_W, "position out of range");
     Base::V = _AP_ROOT_op_set_bit(Base::V, i, 1);
   }
 
   // Set the ith bit into v
-  INLINE NODEBUG void set(int i, bool v) {
+  AP_INLINE AP_NODEBUG void set(int i, bool v) {
     AP_ASSERT(i >= 0 && i < _AP_W, "position out of range");
     Base::V = _AP_ROOT_op_set_bit(Base::V, i, v);
   }
 
   // This is used for sc_lv and sc_bv, which is implemented by sc_uint
   // Rotate an ap_int_base object n places to the left
-  INLINE NODEBUG ap_int_base& lrotate(int n) {
+  AP_INLINE AP_NODEBUG ap_int_base& lrotate(int n) {
     AP_ASSERT(n >= 0 && n < _AP_W, "shift value out of range");
     // TODO unify this.
 #ifdef __SYNTHESIS__
@@ -666,7 +666,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   // This is used for sc_lv and sc_bv, which is implemented by sc_uint
   // Rotate an ap_int_base object n places to the right
-  INLINE NODEBUG ap_int_base& rrotate(int n) {
+  AP_INLINE AP_NODEBUG ap_int_base& rrotate(int n) {
     AP_ASSERT(n >= 0 && n < _AP_W, "shift value out of range");
     // TODO unify this.
 #ifdef __SYNTHESIS__
@@ -681,26 +681,26 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   // Reverse the contents of ap_int_base instance.
   // I.e. LSB becomes MSB and vise versa.
-  INLINE NODEBUG ap_int_base& reverse() {
+  AP_INLINE AP_NODEBUG ap_int_base& reverse() {
     Base::V = _AP_ROOT_op_get_range(Base::V, _AP_W - 1, 0);
     return *this;
   }
 
   // Set the ith bit into v
-  INLINE NODEBUG void set_bit(int i, bool v) {
+  AP_INLINE AP_NODEBUG void set_bit(int i, bool v) {
     Base::V = _AP_ROOT_op_set_bit(Base::V, i, v);
   }
 
   // Get the value of ith bit
-  INLINE NODEBUG bool get_bit(int i) const {
+  AP_INLINE AP_NODEBUG bool get_bit(int i) const {
     return (bool)_AP_ROOT_op_get_bit(Base::V, i);
   }
 
   // complements every bit
-  INLINE NODEBUG void b_not() { Base::V = ~Base::V; }
+  AP_INLINE AP_NODEBUG void b_not() { Base::V = ~Base::V; }
 
   template<typename T>
-  HLS_CONSTEXPR INLINE NODEBUG void checkOverflowBaseC(T val) {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG void checkOverflowBaseC(T val) {
 #if (defined __AP_INT_WARNING__) && (!defined __SYNTHESIS__)
     if(val == 0) return;
     int byte_size = sizeof(T);
@@ -771,7 +771,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
     return;
   }
 
-  HLS_CONSTEXPR INLINE NODEBUG bool checkOverflowCsim(int _ap_w2, bool _ap_s2,
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool checkOverflowCsim(int _ap_w2, bool _ap_s2,
           bool print = true) const {
   #if (defined __AP_INT_WARNING__) && (!defined __SYNTHESIS__)
       int ap_w_l = _ap_w2;
@@ -826,7 +826,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #if (defined __AP_INT_WARNING__) && (!defined __SYNTHESIS__)
 #define OP_ASSIGN_AP(Sym, Sym2, Rty)                                           \
   template <int _AP_W2, bool _AP_S2>                                           \
-  INLINE NODEBUG ap_int_base& operator Sym(const ap_int_base<_AP_W2, _AP_S2>& op2) {   \
+  AP_INLINE AP_NODEBUG ap_int_base& operator Sym(const ap_int_base<_AP_W2, _AP_S2>& op2) {   \
     typename ap_int_base<_AP_W, _AP_S>::template RType<                        \
         _AP_W2, _AP_S2>::Rty##_base lhs(this);                                 \
     typename ap_int_base<_AP_W, _AP_S>::template RType<                        \
@@ -841,7 +841,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #else
 #define OP_ASSIGN_AP(Sym, Sym2, Rty)                                           \
   template <int _AP_W2, bool _AP_S2>                                           \
-  INLINE NODEBUG ap_int_base& operator Sym(const ap_int_base<_AP_W2, _AP_S2>& op2) {   \
+  AP_INLINE AP_NODEBUG ap_int_base& operator Sym(const ap_int_base<_AP_W2, _AP_S2>& op2) {   \
     Base::V Sym op2.V;                                                         \
     return *this;                                                              \
   }
@@ -862,7 +862,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
    */
 #define OP_ASSIGN_AP_CHK(Sym)                                                \
   template <int _AP_W2, bool _AP_S2>                                         \
-  INLINE NODEBUG ap_int_base& operator Sym(const ap_int_base<_AP_W2, _AP_S2>& op2) { \
+  AP_INLINE AP_NODEBUG ap_int_base& operator Sym(const ap_int_base<_AP_W2, _AP_S2>& op2) { \
     _AP_WARNING((_AP_W != _AP_W2),                                           \
                 "Bitsize mismatch for ap_[u]int" #Sym "ap_[u]int.");         \
     Base::V Sym op2.V;                                                       \
@@ -876,11 +876,11 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   /* Prefix increment, decrement.
    * ----------------------------------------------------------------
    */
-  INLINE NODEBUG ap_int_base& operator++() {
+  AP_INLINE AP_NODEBUG ap_int_base& operator++() {
     operator+=((ap_int_base<1, false>)1);
     return *this;
   }
-  INLINE NODEBUG ap_int_base& operator--() {
+  AP_INLINE AP_NODEBUG ap_int_base& operator--() {
     operator-=((ap_int_base<1, false>)1);
     return *this;
   }
@@ -888,12 +888,12 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   /* Postfix increment, decrement
    * ----------------------------------------------------------------
    */
-  INLINE NODEBUG const typename RType<_AP_W,_AP_S>::arg1 operator++(int) {
+  AP_INLINE AP_NODEBUG const typename RType<_AP_W,_AP_S>::arg1 operator++(int) {
     ap_int_base t = *this;
     operator+=((ap_int_base<1, false>)1);
     return t;
   }
-  INLINE NODEBUG const typename RType<_AP_W,_AP_S>::arg1 operator--(int) {
+  AP_INLINE AP_NODEBUG const typename RType<_AP_W,_AP_S>::arg1 operator--(int) {
     ap_int_base t = *this;
     operator-=((ap_int_base<1, false>)1);
     return t;
@@ -902,23 +902,23 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   /* Unary arithmetic.
    * ----------------------------------------------------------------
    */
-  HLS_CONSTEXPR INLINE NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator+() const { return *this; }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator+() const { return *this; }
 
   // TODO used to be W>64 only... need check.
-  HLS_CONSTEXPR INLINE NODEBUG typename RType<1, false>::minus operator-() const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename RType<1, false>::minus operator-() const {
     return ap_int_base<1, false>(0) - *this;
   }
 
   /* Not (!)
    * ----------------------------------------------------------------
    */
-  HLS_CONSTEXPR INLINE NODEBUG bool operator!() const { return Base::V == 0; }
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator!() const { return Base::V == 0; }
 
   /* Bitwise (arithmetic) unary: complement
      ----------------------------------------------------------------
   */
   // XXX different from Mentor's ac_int!
-  HLS_CONSTEXPR INLINE NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator~() const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator~() const {
     ap_int_base<_AP_W, _AP_S> r(0);
     r.V = ~Base::V;
     return r;
@@ -928,7 +928,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
    * ----------------------------------------------------------------
    */
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator<<(const ap_int_base<_AP_W2, true>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator<<(const ap_int_base<_AP_W2, true>& op2) const {
     bool isNeg = _AP_ROOT_op_get_bit(op2.V, _AP_W2 - 1);
     ap_int_base<_AP_W2, false> sh = op2;
     if (isNeg) {
@@ -939,14 +939,14 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator<<(const ap_int_base<_AP_W2, false>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator<<(const ap_int_base<_AP_W2, false>& op2) const {
     ap_int_base r(0);
     r.V = Base::V << op2.to_uint();
     return r;
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator>>(const ap_int_base<_AP_W2, true>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator>>(const ap_int_base<_AP_W2, true>& op2) const {
     bool isNeg = _AP_ROOT_op_get_bit(op2.V, _AP_W2 - 1);
     ap_int_base<_AP_W2, false> sh = op2;
     if (isNeg) {
@@ -957,7 +957,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator>>(const ap_int_base<_AP_W2, false>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename RType<_AP_W,_AP_S>::arg1 operator>>(const ap_int_base<_AP_W2, false>& op2) const {
     ap_int_base r(0);
     r.V = Base::V >> op2.to_uint();
     return r;
@@ -966,12 +966,12 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   // FIXME we standalone operator>> for ap_int_base and ap_range_ref.
 #if 0
   template <int _AP_W2, bool _AP_S2>
-  INLINE ap_int_base operator<<(const ap_range_ref<_AP_W2, _AP_S2>& op2) const {
+  AP_INLINE ap_int_base operator<<(const ap_range_ref<_AP_W2, _AP_S2>& op2) const {
     return *this << (op2.operator ap_int_base<_AP_W2, false>());
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE ap_int_base operator>>(const ap_range_ref<_AP_W2, _AP_S2>& op2) const {
+  AP_INLINE ap_int_base operator>>(const ap_range_ref<_AP_W2, _AP_S2>& op2) const {
     return *this >> (op2.operator ap_int_base<_AP_W2, false>());
   }
 #endif
@@ -980,7 +980,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
    * ----------------------------------------------------------------
    */
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int_base& operator<<=(const ap_int_base<_AP_W2, true>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int_base& operator<<=(const ap_int_base<_AP_W2, true>& op2) {
     bool isNeg = _AP_ROOT_op_get_bit(op2.V, _AP_W2 - 1);
     ap_int_base<_AP_W2, false> sh = op2;
     if (isNeg) {
@@ -991,13 +991,13 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int_base& operator<<=(const ap_int_base<_AP_W2, false>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int_base& operator<<=(const ap_int_base<_AP_W2, false>& op2) {
     Base::V <<= op2.to_uint();
     return *this;
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int_base& operator>>=(const ap_int_base<_AP_W2, true>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int_base& operator>>=(const ap_int_base<_AP_W2, true>& op2) {
     bool isNeg = _AP_ROOT_op_get_bit(op2.V, _AP_W2 - 1);
     ap_int_base<_AP_W2, false> sh = op2;
     if (isNeg) {
@@ -1008,7 +1008,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int_base& operator>>=(const ap_int_base<_AP_W2, false>& op2) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int_base& operator>>=(const ap_int_base<_AP_W2, false>& op2) {
     Base::V >>= op2.to_uint();
     return *this;
   }
@@ -1016,11 +1016,11 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   // FIXME we standalone operator>> for ap_int_base and ap_range_ref.
 #if 0
   template <int _AP_W2, bool _AP_S2>
-  INLINE ap_int_base& operator<<=(const ap_range_ref<_AP_W2, _AP_S2>& op2) {
+  AP_INLINE ap_int_base& operator<<=(const ap_range_ref<_AP_W2, _AP_S2>& op2) {
     return *this <<= (op2.operator ap_int_base<_AP_W2, false>());
   }
   template <int _AP_W2, bool _AP_S2>
-  INLINE ap_int_base& operator>>=(const ap_range_ref<_AP_W2, _AP_S2>& op2) {
+  AP_INLINE ap_int_base& operator>>=(const ap_range_ref<_AP_W2, _AP_S2>& op2) {
     return *this >>= (op2.operator ap_int_base<_AP_W2, false>());
   }
 #endif
@@ -1029,48 +1029,48 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
    * ----------------------------------------------------------------
    */
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG bool operator==(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator==(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
     return Base::V == op2.V;
   }
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG bool operator!=(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator!=(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
     return !(Base::V == op2.V);
   }
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG bool operator<(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator<(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
     return Base::V < op2.V;
   }
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG bool operator>=(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator>=(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
     return Base::V >= op2.V;
   }
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG bool operator>(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator>(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
     return Base::V > op2.V;
   }
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR INLINE NODEBUG bool operator<=(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator<=(const ap_int_base<_AP_W2, _AP_S2>& op2) const {
     return Base::V <= op2.V;
   }
 
   /* Bit and Part Select
    * ----------------------------------------------------------------
    */
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) {
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) {
     _AP_ERROR(Hi >= _AP_W, "Hi(%d)out of bound(%d) in range()", Hi, _AP_W);
     _AP_ERROR(Lo >= _AP_W, "Lo(%d)out of bound(%d) in range()", Lo, _AP_W);
     return ap_range_ref<_AP_W, _AP_S>(this, Hi, Lo);
   }
 
   // This is a must to strip constness to produce reference type.
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) const {
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> range(int Hi, int Lo) const {
     _AP_ERROR(Hi >= _AP_W, "Hi(%d)out of bound(%d) in range()", Hi, _AP_W);
     _AP_ERROR(Lo >= _AP_W, "Lo(%d)out of bound(%d) in range()", Lo, _AP_W);
     return ap_range_ref<_AP_W, _AP_S>(const_cast<ap_int_base*>(this), Hi, Lo);
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> range(
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> range(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) {
     int Hi = HiIdx.to_int();
@@ -1079,7 +1079,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> range(
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> range(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) const {
     int Hi = HiIdx.to_int();
@@ -1087,24 +1087,24 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
     return this->range(Hi, Lo);
   }
 
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> range() {
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> range() {
     return this->range(_AP_W - 1, 0);
   }
 
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> range() const {
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> range() const {
     return this->range(_AP_W - 1, 0);
   }
 
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) {
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) {
     return this->range(Hi, Lo);
   }
 
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) const {
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(int Hi, int Lo) const {
     return this->range(Hi, Lo);
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) {
     int Hi = HiIdx.to_int();
@@ -1113,7 +1113,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W, _AP_S> operator()(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) const {
     int Hi = HiIdx.to_int();
@@ -1123,21 +1123,21 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
 #if 0
   template<int Hi, int Lo>
-  INLINE ap_int_base<Hi-Lo+1, false> slice() const {
+  AP_INLINE ap_int_base<Hi-Lo+1, false> slice() const {
     AP_ASSERT(Hi >= Lo && Hi < _AP_W && Lo < _AP_W, "Out of bounds in slice()");
     ap_int_base<Hi-Lo+1, false> tmp ;
     tmp.V = _AP_ROOT_op_get_range(Base::V, Lo, Hi);
     return tmp;
   }
 
-  INLINE ap_bit_ref<_AP_W,_AP_S> operator [] ( unsigned int uindex) {
+  AP_INLINE ap_bit_ref<_AP_W,_AP_S> operator [] ( unsigned int uindex) {
     AP_ASSERT(uindex < _AP_W, "Attempting to read bit beyond MSB");
     ap_bit_ref<_AP_W,_AP_S> bvh( this, uindex );
     return bvh;
   }
 #endif
 
-  INLINE NODEBUG ap_bit_ref<_AP_W, _AP_S> operator[](int index) {
+  AP_INLINE AP_NODEBUG ap_bit_ref<_AP_W, _AP_S> operator[](int index) {
     AP_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
     ap_bit_ref<_AP_W, _AP_S> bvh(this, index);
@@ -1145,7 +1145,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_bit_ref<_AP_W, _AP_S> operator[](
+  AP_INLINE AP_NODEBUG ap_bit_ref<_AP_W, _AP_S> operator[](
       const ap_int_base<_AP_W2, _AP_S2>& index) {
     AP_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
@@ -1153,27 +1153,27 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
     return bvh;
   }
 
-  INLINE NODEBUG bool operator[](int index) const {
+  AP_INLINE AP_NODEBUG bool operator[](int index) const {
     AP_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
     ap_bit_ref<_AP_W, _AP_S> br(this, index);
     return br.to_bool();
   }
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG bool operator[](const ap_int_base<_AP_W2, _AP_S2>& index) const {
+  AP_INLINE AP_NODEBUG bool operator[](const ap_int_base<_AP_W2, _AP_S2>& index) const {
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
     ap_bit_ref<_AP_W, _AP_S> br(this, index.to_int());
     return br.to_bool();
   }
 
-  INLINE NODEBUG ap_bit_ref<_AP_W, _AP_S> bit(int index) {
+  AP_INLINE AP_NODEBUG ap_bit_ref<_AP_W, _AP_S> bit(int index) {
     AP_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
     ap_bit_ref<_AP_W, _AP_S> bvh(this, index);
     return bvh;
   }
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_bit_ref<_AP_W, _AP_S> bit(
+  AP_INLINE AP_NODEBUG ap_bit_ref<_AP_W, _AP_S> bit(
       const ap_int_base<_AP_W2, _AP_S2>& index) {
     AP_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
@@ -1181,7 +1181,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
     return bvh;
   }
 
-  INLINE NODEBUG bool bit(int index) const {
+  AP_INLINE AP_NODEBUG bool bit(int index) const {
     AP_ASSERT(index >= 0, "Attempting to read bit with negative index");
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
     ap_bit_ref<_AP_W, _AP_S> br(this, index);
@@ -1189,13 +1189,13 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG bool bit(const ap_int_base<_AP_W2, _AP_S2>& index) const {
+  AP_INLINE AP_NODEBUG bool bit(const ap_int_base<_AP_W2, _AP_S2>& index) const {
     return bit(index.to_int());
   }
 
 #if 0
   template<typename _AP_T>
-  INLINE bool operator[](_AP_T index) const {
+  AP_INLINE bool operator[](_AP_T index) const {
     AP_ASSERT(index < _AP_W, "Attempting to read bit beyond MSB");
     ap_bit_ref<_AP_W,_AP_S> br = operator[](index);
     return br.to_bool();
@@ -1204,7 +1204,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   // Count the number of zeros from the most significant bit
   // to the first one bit.
-  HLS_CONSTEXPR INLINE NODEBUG int countLeadingZeros() const {
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG int countLeadingZeros() const {
 #ifdef __SYNTHESIS__
     return __fpga_ctlz(this->V);
 #else
@@ -1213,7 +1213,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   } // countLeadingZeros
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
   concat(const ap_int_base<_AP_W2, _AP_S2>& a2) const {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_int_base<_AP_W2, _AP_S2> >(
@@ -1222,15 +1222,15 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
   concat(ap_int_base<_AP_W2, _AP_S2>& a2) {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_int_base<_AP_W2, _AP_S2> >(*this, a2);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE
-      NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_range_ref<_AP_W2, _AP_S2> >
+  AP_INLINE
+      AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_range_ref<_AP_W2, _AP_S2> >
       operator,(const ap_range_ref<_AP_W2, _AP_S2> &a2) const {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_range_ref<_AP_W2, _AP_S2> >(
@@ -1239,15 +1239,15 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE
-      NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_range_ref<_AP_W2, _AP_S2> >
+  AP_INLINE
+      AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_range_ref<_AP_W2, _AP_S2> >
       operator,(ap_range_ref<_AP_W2, _AP_S2> &a2) {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_range_ref<_AP_W2, _AP_S2> >(*this, a2);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
   operator,(const ap_int_base<_AP_W2, _AP_S2> &a2) {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_int_base<_AP_W2, _AP_S2> >(
@@ -1255,7 +1255,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
   operator,(ap_int_base<_AP_W2, _AP_S2> &a2) const {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_int_base<_AP_W2, _AP_S2> >(
@@ -1263,7 +1263,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
   operator,(const ap_int_base<_AP_W2, _AP_S2> &a2) const {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_int_base<_AP_W2, _AP_S2> >(
@@ -1272,14 +1272,14 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2, ap_int_base<_AP_W2, _AP_S2> >
   operator,(ap_int_base<_AP_W2, _AP_S2> &a2) {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2,
                          ap_int_base<_AP_W2, _AP_S2> >(*this, a2);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1, ap_bit_ref<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1, ap_bit_ref<_AP_W2, _AP_S2> >
   operator,(const ap_bit_ref<_AP_W2, _AP_S2> &a2) const {
     return ap_concat_ref<_AP_W, ap_int_base, 1, ap_bit_ref<_AP_W2, _AP_S2> >(
         const_cast<ap_int_base<_AP_W, _AP_S>&>(*this),
@@ -1287,14 +1287,14 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1, ap_bit_ref<_AP_W2, _AP_S2> >
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1, ap_bit_ref<_AP_W2, _AP_S2> >
   operator,(ap_bit_ref<_AP_W2, _AP_S2> &a2) {
     return ap_concat_ref<_AP_W, ap_int_base, 1, ap_bit_ref<_AP_W2, _AP_S2> >(
         *this, a2);
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2 + _AP_W3,
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2 + _AP_W3,
                        ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
   operator,(const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2 + _AP_W3,
@@ -1304,7 +1304,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2 + _AP_W3,
+  AP_INLINE AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, _AP_W2 + _AP_W3,
                        ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> >
   operator,(ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3> &a2) {
     return ap_concat_ref<_AP_W, ap_int_base, _AP_W2 + _AP_W3,
@@ -1314,7 +1314,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_concat_ref<
+  AP_INLINE AP_NODEBUG ap_concat_ref<
       _AP_W, ap_int_base, _AP_W2,
       af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
   operator,(const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>
@@ -1329,7 +1329,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_concat_ref<
+  AP_INLINE AP_NODEBUG ap_concat_ref<
       _AP_W, ap_int_base, _AP_W2,
       af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
   operator,(af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> &a2) {
@@ -1341,8 +1341,8 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE
-      NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1,
+  AP_INLINE
+      AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1,
                     af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
       operator,(const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>
                     &a2) const {
@@ -1356,8 +1356,8 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE
-      NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1,
+  AP_INLINE
+      AP_NODEBUG ap_concat_ref<_AP_W, ap_int_base, 1,
                     af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> >
       operator,(
           af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2> &a2) {
@@ -1367,25 +1367,25 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_int_base<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator&(
+  AP_INLINE AP_NODEBUG ap_int_base<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator&(
       const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
     return *this & a2.get();
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_int_base<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator|(
+  AP_INLINE AP_NODEBUG ap_int_base<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator|(
       const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
     return *this | a2.get();
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_int_base<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator^(
+  AP_INLINE AP_NODEBUG ap_int_base<AP_MAX(_AP_W2 + _AP_W3, _AP_W), _AP_S> operator^(
       const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& a2) {
     return *this ^ a2.get();
   }
 
   template <int _AP_W3>
-  INLINE NODEBUG void set(const ap_int_base<_AP_W3, false>& val) {
+  AP_INLINE AP_NODEBUG void set(const ap_int_base<_AP_W3, false>& val) {
     Base::V = val.V;
   }
 
@@ -1393,14 +1393,12 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
    * ----------------------------------------------------------------
    */
   // XXX non-const version deleted.
-  INLINE NODEBUG bool and_reduce() const { return _AP_ROOT_op_reduce(and, Base::V); }
-  INLINE NODEBUG bool nand_reduce() const { return _AP_ROOT_op_reduce(nand, Base::V); }
-  INLINE NODEBUG bool or_reduce() const { return _AP_ROOT_op_reduce(or, Base::V); }
-  INLINE NODEBUG bool nor_reduce() const { return !(_AP_ROOT_op_reduce(or, Base::V)); }
-  INLINE NODEBUG bool xor_reduce() const { return _AP_ROOT_op_reduce (xor, Base::V); }
-  INLINE NODEBUG bool xnor_reduce() const {
-    return !(_AP_ROOT_op_reduce (xor, Base::V));
-  }
+  AP_INLINE AP_NODEBUG bool and_reduce() const { return _AP_ROOT_op_reduce(and, Base::V); }
+  AP_INLINE AP_NODEBUG bool nand_reduce() const { return !and_reduce(); }
+  AP_INLINE AP_NODEBUG bool or_reduce() const { return _AP_ROOT_op_reduce(or, Base::V); }
+  AP_INLINE AP_NODEBUG bool nor_reduce() const { return !or_reduce(); }
+  AP_INLINE AP_NODEBUG bool xor_reduce() const { return _AP_ROOT_op_reduce (xor, Base::V); }
+  AP_INLINE AP_NODEBUG bool xnor_reduce() const { return !xor_reduce(); }
 
   /* Output as a string.
    * ----------------------------------------------------------------
@@ -1413,7 +1411,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
     return (Base::V).to_string(rd, sign);
   }
 #else
-  INLINE NODEBUG char* to_string(signed char rd = 2, bool sign = _AP_S) const {
+  AP_INLINE AP_NODEBUG char* to_string(signed char rd = 2, bool sign = _AP_S) const {
     _AP_UNUSED_PARAM(rd);
     _AP_UNUSED_PARAM(sign);
     return 0;
@@ -1425,7 +1423,7 @@ struct ap_int_base : public _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #ifndef AP_AUTOCC
 #ifndef __SYNTHESIS__
 template <int _AP_W, bool _AP_S>
-INLINE NODEBUG std::ostream& operator<<(std::ostream& os,
+AP_INLINE AP_NODEBUG std::ostream& operator<<(std::ostream& os,
                                 const ap_int_base<_AP_W, _AP_S>& x) {
   std::ios_base::fmtflags ff = std::cout.flags();
   if (ff & std::cout.hex) {
@@ -1441,7 +1439,7 @@ INLINE NODEBUG std::ostream& operator<<(std::ostream& os,
 
 #ifndef __SYNTHESIS__
 template <int _AP_W, bool _AP_S>
-INLINE NODEBUG std::istream& operator>>(std::istream& in,
+AP_INLINE AP_NODEBUG std::istream& operator>>(std::istream& in,
                                 ap_int_base<_AP_W, _AP_S>& op) {
   std::string str;
   in >> str;
@@ -1460,7 +1458,7 @@ INLINE NODEBUG std::istream& operator>>(std::istream& in,
  */
 #define OP_BIN_AP(Sym, Rty)                                                   \
   template <int _AP_W, bool _AP_S, int _AP_W2, bool _AP_S2>                   \
-  HLS_CONSTEXPR INLINE NODEBUG                                                \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG                                                \
       typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W2, _AP_S2>::Rty \
       operator Sym(const ap_int_base<_AP_W, _AP_S>& op,                       \
                    const ap_int_base<_AP_W2, _AP_S2>& op2) {                  \
@@ -1483,7 +1481,7 @@ OP_BIN_AP(^, logic)
 
 #define OP_BIN_AP2(Sym, Rty)                                                  \
   template <int _AP_W, bool _AP_S, int _AP_W2, bool _AP_S2>                   \
-  HLS_CONSTEXPR INLINE NODEBUG                                                \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG                                                \
       typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W2, _AP_S2>::Rty \
       operator Sym(const ap_int_base<_AP_W, _AP_S>& op,                       \
                    const ap_int_base<_AP_W2, _AP_S2>& op2) {                  \
@@ -1509,13 +1507,13 @@ OP_BIN_AP2(%, mod)
  */
 #define OP_BIN_WITH_PTR(BIN_OP)                                           \
   template <typename PTR_TYPE, int _AP_W, bool _AP_S>                     \
-  HLS_CONSTEXPR INLINE NODEBUG PTR_TYPE* operator BIN_OP(PTR_TYPE* i_op,                        \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG PTR_TYPE* operator BIN_OP(PTR_TYPE* i_op,                        \
                                    const ap_int_base<_AP_W, _AP_S>& op) { \
     ap_slong op2 = op.to_int64(); /* Not all implementation */            \
     return i_op BIN_OP op2;                                               \
   }                                                                       \
   template <typename PTR_TYPE, int _AP_W, bool _AP_S>                     \
-  HLS_CONSTEXPR INLINE NODEBUG PTR_TYPE* operator BIN_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG PTR_TYPE* operator BIN_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
                                    PTR_TYPE* i_op) {                      \
     ap_slong op2 = op.to_int64(); /* Not all implementation */            \
     return op2 BIN_OP i_op;                                               \
@@ -1532,13 +1530,13 @@ OP_BIN_WITH_PTR(-)
 // when ap_int<wa>'s width > 64, then trunc ap_int<w> to ap_int<64>
 #define OP_BIN_WITH_FLOAT(BIN_OP, C_TYPE)                              \
   template <int _AP_W, bool _AP_S>                                     \
-  HLS_CONSTEXPR INLINE NODEBUG C_TYPE operator BIN_OP(C_TYPE i_op,                           \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG C_TYPE operator BIN_OP(C_TYPE i_op,                           \
                                 const ap_int_base<_AP_W, _AP_S>& op) { \
     typename ap_int_base<_AP_W, _AP_S>::RetType op2 = op;              \
     return i_op BIN_OP op2;                                            \
   }                                                                    \
   template <int _AP_W, bool _AP_S>                                     \
-  HLS_CONSTEXPR INLINE NODEBUG C_TYPE operator BIN_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG C_TYPE operator BIN_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
                                 C_TYPE i_op) {                         \
     typename ap_int_base<_AP_W, _AP_S>::RetType op2 = op;              \
     return op2 BIN_OP i_op;                                            \
@@ -1557,13 +1555,13 @@ ALL_OP_WITH_FLOAT(double)
 // when ap_int<wa>'s width > 64, then trunc ap_int<w> to ap_int<64>
 #define OP_BIN_WITH_HALF(BIN_OP, C_TYPE)                              \
   template <int _AP_W, bool _AP_S>                                     \
-  INLINE NODEBUG C_TYPE operator BIN_OP(C_TYPE i_op,                           \
+  AP_INLINE AP_NODEBUG C_TYPE operator BIN_OP(C_TYPE i_op,                           \
                                 const ap_int_base<_AP_W, _AP_S>& op) { \
     typename ap_int_base<_AP_W, _AP_S>::RetType op2 = op;              \
     return i_op BIN_OP op2;                                            \
   }                                                                    \
   template <int _AP_W, bool _AP_S>                                     \
-  INLINE NODEBUG C_TYPE operator BIN_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
+  AP_INLINE AP_NODEBUG C_TYPE operator BIN_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
                                 C_TYPE i_op) {                         \
     typename ap_int_base<_AP_W, _AP_S>::RetType op2 = op;              \
     return op2 BIN_OP i_op;                                            \
@@ -1585,13 +1583,13 @@ ALL_OP_WITH_HALF(half)
 // arithmetic and bitwise operators.
 #define OP_BIN_WITH_INT(BIN_OP, C_TYPE, _AP_W2, _AP_S2, RTYPE)             \
   template <int _AP_W, bool _AP_S>                                         \
-  HLS_CONSTEXPR INLINE NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W2,        \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W2,        \
                                                             _AP_S2>::RTYPE \
   operator BIN_OP(C_TYPE i_op, const ap_int_base<_AP_W, _AP_S>& op) {      \
     return ap_int_base<_AP_W2, _AP_S2>(i_op) BIN_OP(op);                   \
   }                                                                        \
   template <int _AP_W, bool _AP_S>                                         \
-  HLS_CONSTEXPR INLINE NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W2,        \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W2,        \
                                                             _AP_S2>::RTYPE \
   operator BIN_OP(const ap_int_base<_AP_W, _AP_S>& op, C_TYPE i_op) {      \
     return op BIN_OP ap_int_base<_AP_W2, _AP_S2>(i_op);                    \
@@ -1626,7 +1624,7 @@ ALL_OP_BIN_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 // shift operators.
 #define ALL_OP_SHIFT_WITH_INT(C_TYPE, _AP_W2, _AP_S2)    \
   template <int _AP_W, bool _AP_S>                       \
-  HLS_CONSTEXPR INLINE NODEBUG NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator<<(           \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG AP_NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator<<(           \
       const ap_int_base<_AP_W, _AP_S>& op, C_TYPE op2) { \
     ap_int_base<_AP_W, _AP_S> r(0);                         \
     if (_AP_S2)                                          \
@@ -1636,7 +1634,7 @@ ALL_OP_BIN_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
     return r;                                            \
   }                                                      \
   template <int _AP_W, bool _AP_S>                       \
-  HLS_CONSTEXPR INLINE NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator>>(           \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator>>(           \
       const ap_int_base<_AP_W, _AP_S>& op, C_TYPE op2) { \
     ap_int_base<_AP_W, _AP_S> r(0);                         \
     if (_AP_S2)                                          \
@@ -1657,14 +1655,14 @@ ALL_OP_SHIFT_WITH_INT(ap_slong, _AP_SIZE_ap_slong, true)
 
 #define ALL_OP_SHIFT_WITH_INT(C_TYPE, _AP_W2, _AP_S2)    \
   template <int _AP_W, bool _AP_S>                       \
-  HLS_CONSTEXPR INLINE NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator<<(           \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator<<(           \
       const ap_int_base<_AP_W, _AP_S>& op, C_TYPE op2) { \
     ap_int_base<_AP_W, _AP_S> r(0);                         \
     r.V = op.V << op2;                                   \
     return r;                                            \
   }                                                      \
   template <int _AP_W, bool _AP_S>                       \
-  HLS_CONSTEXPR INLINE NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator>>(           \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W, _AP_S>::template RType<_AP_W,_AP_S>::arg1 operator>>(           \
       const ap_int_base<_AP_W, _AP_S>& op, C_TYPE op2) { \
     ap_int_base<_AP_W, _AP_S> r(0);                         \
     r.V = op.V >> op2;                                   \
@@ -1682,7 +1680,7 @@ ALL_OP_SHIFT_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 // compound assign operators.
 #define OP_ASSIGN_WITH_INT(ASSIGN_OP, C_TYPE, _AP_W2, _AP_S2)       \
   template <int _AP_W, bool _AP_S>                                  \
-  INLINE NODEBUG ap_int_base<_AP_W, _AP_S>& operator ASSIGN_OP(             \
+  AP_INLINE AP_NODEBUG ap_int_base<_AP_W, _AP_S>& operator ASSIGN_OP(             \
       ap_int_base<_AP_W, _AP_S>& op, C_TYPE op2) {                  \
     return op ASSIGN_OP ap_int_base<_AP_W2, _AP_S2>(op2);           \
   }
@@ -1721,7 +1719,7 @@ ALL_OP_ASSIGN_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 
 #define OP_ASSIGN_WITH_FLOAT(ASSIGN_OP, C_TYPE)                    \
   template <int _AP_W, bool _AP_S>                                 \
-  INLINE NODEBUG C_TYPE& operator ASSIGN_OP(                               \
+  AP_INLINE AP_NODEBUG C_TYPE& operator ASSIGN_OP(                               \
       C_TYPE& op2, ap_int_base<_AP_W, _AP_S>& op) {                \
     C_TYPE op_rt = op.to_##C_TYPE();      			   \
     return op2 ASSIGN_OP op_rt;                                    \
@@ -1744,12 +1742,12 @@ ALL_OP_ASSIGN_WITH_FLOAT(double)
 // equality and relational operators.
 #define OP_REL_WITH_INT(REL_OP, C_TYPE, _AP_W2, _AP_S2)              \
   template <int _AP_W, bool _AP_S>                                   \
-  HLS_CONSTEXPR INLINE NODEBUG bool operator REL_OP(C_TYPE i_op,                           \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator REL_OP(C_TYPE i_op,                           \
                               const ap_int_base<_AP_W, _AP_S>& op) { \
     return ap_int_base<_AP_W2, _AP_S2>(i_op) REL_OP op;              \
   }                                                                  \
   template <int _AP_W, bool _AP_S>                                   \
-  HLS_CONSTEXPR INLINE NODEBUG bool operator REL_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator REL_OP(const ap_int_base<_AP_W, _AP_S>& op,   \
                               C_TYPE op2) {                          \
     return op REL_OP ap_int_base<_AP_W2, _AP_S2>(op2);               \
   }
@@ -1780,22 +1778,22 @@ ALL_OP_REL_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 
 #define OP_REL_WITH_DOUBLE_OR_FLOAT(Sym)                            \
   template <int _AP_W, bool _AP_S>                                  \
-  HLS_CONSTEXPR INLINE NODEBUG bool operator Sym(const ap_int_base<_AP_W, _AP_S>& op1,    \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator Sym(const ap_int_base<_AP_W, _AP_S>& op1,    \
                            double op2) {                            \
     return op1.to_double() Sym op2 ;                                \
   }                                                                 \
   template <int _AP_W, bool _AP_S>                                  \
-  HLS_CONSTEXPR INLINE NODEBUG bool operator Sym(double op1,                              \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator Sym(double op1,                              \
                            const ap_int_base<_AP_W, _AP_S>& op2) {  \
     return op1 Sym op2.to_double() ;                                \
   }                                                                 \
   template <int _AP_W, bool _AP_S>                                  \
-  HLS_CONSTEXPR INLINE NODEBUG bool operator Sym(const ap_int_base<_AP_W, _AP_S>& op1,    \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator Sym(const ap_int_base<_AP_W, _AP_S>& op1,    \
                            float op2) {                             \
     return op1.to_double() Sym op2 ;                                \
   }                                                                 \
   template <int _AP_W, bool _AP_S>                                  \
-  HLS_CONSTEXPR INLINE NODEBUG bool operator Sym(float op1,                               \
+  HLS_CONSTEXPR AP_INLINE AP_NODEBUG bool operator Sym(float op1,                               \
                            const ap_int_base<_AP_W, _AP_S>& op2) {  \
     return op1 Sym op2.to_double() ;                                \
   }
@@ -1815,14 +1813,14 @@ ALL_OP_REL_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 // arithmetic, bitwise and shift operators.
 #define OP_BIN_WITH_RANGE(BIN_OP, RTYPE)                                     \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                \
-  INLINE NODEBUG typename ap_int_base<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
+  AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
                                                               _AP_S2>::RTYPE \
   operator BIN_OP(const ap_range_ref<_AP_W1, _AP_S1>& op1,                   \
                   const ap_int_base<_AP_W2, _AP_S2>& op2) {                  \
     return ap_int_base<_AP_W1, false>(op1) BIN_OP op2;                       \
   }                                                                          \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                \
-  INLINE NODEBUG typename ap_int_base<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
+  AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W1, _AP_S1>::template RType<_AP_W2,        \
                                                               _AP_S2>::RTYPE \
   operator BIN_OP(const ap_int_base<_AP_W1, _AP_S1>& op1,                    \
                   const ap_range_ref<_AP_W2, _AP_S2>& op2) {                 \
@@ -1845,13 +1843,13 @@ OP_BIN_WITH_RANGE(<<, arg1)
 // compound assignment operators.
 #define OP_ASSIGN_WITH_RANGE(ASSIGN_OP)                       \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
+  AP_INLINE AP_NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
       ap_int_base<_AP_W1, _AP_S1>& op1,                       \
       const ap_range_ref<_AP_W2, _AP_S2>& op2) {              \
     return op1 ASSIGN_OP ap_int_base<_AP_W2, false>(op2);     \
   }                                                           \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_range_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(    \
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(    \
       ap_range_ref<_AP_W1, _AP_S1>& op1,                      \
       const ap_int_base<_AP_W2, _AP_S2>& op2) {               \
     ap_int_base<_AP_W1, false> tmp(op1);                      \
@@ -1875,7 +1873,7 @@ OP_ASSIGN_WITH_RANGE(<<=)
 // width.
 #define OP_ASSIGN_WITH_RANGE(ASSIGN_OP)                       \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
+  AP_INLINE AP_NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
       ap_int_base<_AP_W1, _AP_S1>& op1,                       \
       const ap_range_ref<_AP_W2, _AP_S2>& op2) {              \
     ap_int_base<_AP_W2, false> tmp(op2);                      \
@@ -1883,7 +1881,7 @@ OP_ASSIGN_WITH_RANGE(<<=)
     return op1;                                               \
   }                                                           \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_range_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(    \
+  AP_INLINE AP_NODEBUG ap_range_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(    \
       ap_range_ref<_AP_W1, _AP_S1>& op1,                      \
       const ap_int_base<_AP_W2, _AP_S2>& op2) {               \
     ap_int_base<_AP_W1, false> tmp(op1);                      \
@@ -1901,12 +1899,12 @@ OP_ASSIGN_WITH_RANGE(^=)
 // equality and relational operators
 #define OP_REL_WITH_RANGE(REL_OP)                                          \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>              \
-  INLINE NODEBUG bool operator REL_OP(const ap_range_ref<_AP_W1, _AP_S1>& op1,     \
+  AP_INLINE AP_NODEBUG bool operator REL_OP(const ap_range_ref<_AP_W1, _AP_S1>& op1,     \
                               const ap_int_base<_AP_W2, _AP_S2>& op2) {    \
     return ap_int_base<_AP_W1, false>(op1).operator REL_OP(op2);           \
   }                                                                        \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>              \
-  INLINE NODEBUG bool operator REL_OP(const ap_int_base<_AP_W1, _AP_S1>& op1,      \
+  AP_INLINE AP_NODEBUG bool operator REL_OP(const ap_int_base<_AP_W1, _AP_S1>& op1,      \
                               const ap_range_ref<_AP_W2, _AP_S2>& op2) {   \
     return op1.operator REL_OP(op2.operator ap_int_base<_AP_W2, false>()); \
   }
@@ -1926,13 +1924,13 @@ OP_REL_WITH_RANGE(<=)
 // arithmetic, bitwise and shift operators.
 #define OP_BIN_WITH_BIT(BIN_OP, RTYPE)                                         \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                  \
-  INLINE NODEBUG typename ap_int_base<_AP_W1, _AP_S1>::template RType<1, false>::RTYPE \
+  AP_INLINE AP_NODEBUG typename ap_int_base<_AP_W1, _AP_S1>::template RType<1, false>::RTYPE \
   operator BIN_OP(const ap_int_base<_AP_W1, _AP_S1>& op1,                      \
                   const ap_bit_ref<_AP_W2, _AP_S2>& op2) {                     \
     return op1 BIN_OP ap_int_base<1, false>(op2);                              \
   }                                                                            \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>                  \
-  INLINE NODEBUG typename ap_int_base<1, false>::template RType<_AP_W2, _AP_S2>::RTYPE \
+  AP_INLINE AP_NODEBUG typename ap_int_base<1, false>::template RType<_AP_W2, _AP_S2>::RTYPE \
   operator BIN_OP(const ap_bit_ref<_AP_W1, _AP_S1>& op1,                       \
                   const ap_int_base<_AP_W2, _AP_S2>& op2) {                    \
     return ap_int_base<1, false>(op1) BIN_OP op2;                              \
@@ -1954,13 +1952,13 @@ OP_BIN_WITH_BIT(<<, arg1)
 // compound assignment operators.
 #define OP_ASSIGN_WITH_BIT(ASSIGN_OP)                         \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
+  AP_INLINE AP_NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
       ap_int_base<_AP_W1, _AP_S1>& op1,                       \
       const ap_bit_ref<_AP_W2, _AP_S2>& op2) {                \
     return op1 ASSIGN_OP ap_int_base<1, false>(op2);          \
   }                                                           \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_bit_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(      \
+  AP_INLINE AP_NODEBUG ap_bit_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(      \
       ap_bit_ref<_AP_W1, _AP_S1>& op1,                        \
       const ap_int_base<_AP_W2, _AP_S2>& op2) {               \
     ap_int_base<1, false> tmp(op1);                           \
@@ -1984,7 +1982,7 @@ OP_ASSIGN_WITH_BIT(<<=)
 // width.
 #define OP_ASSIGN_WITH_BIT(ASSIGN_OP)                         \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
+  AP_INLINE AP_NODEBUG ap_int_base<_AP_W1, _AP_S1>& operator ASSIGN_OP(     \
       ap_int_base<_AP_W1, _AP_S1>& op1,                       \
       const ap_bit_ref<_AP_W2, _AP_S2>& op2) {                \
     ap_int_base<1, false> tmp(op2);                           \
@@ -1992,7 +1990,7 @@ OP_ASSIGN_WITH_BIT(<<=)
     return op1;                                               \
   }                                                           \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2> \
-  INLINE NODEBUG ap_bit_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(      \
+  AP_INLINE AP_NODEBUG ap_bit_ref<_AP_W1, _AP_S1>& operator ASSIGN_OP(      \
       ap_bit_ref<_AP_W1, _AP_S1>& op1,                        \
       const ap_int_base<_AP_W2, _AP_S2>& op2) {               \
     ap_int_base<1, false> tmp(op1);                           \
@@ -2010,12 +2008,12 @@ OP_ASSIGN_WITH_BIT(^=)
 // equality and relational operators.
 #define OP_REL_WITH_BIT(REL_OP)                                         \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>           \
-  INLINE NODEBUG bool operator REL_OP(const ap_int_base<_AP_W1, _AP_S1>& op1,   \
+  AP_INLINE AP_NODEBUG bool operator REL_OP(const ap_int_base<_AP_W1, _AP_S1>& op1,   \
                               const ap_bit_ref<_AP_W2, _AP_S2>& op2) {  \
     return op1 REL_OP ap_int_base<1, false>(op2);                       \
   }                                                                     \
   template <int _AP_W1, bool _AP_S1, int _AP_W2, bool _AP_S2>           \
-  INLINE NODEBUG bool operator REL_OP(const ap_bit_ref<_AP_W1, _AP_S1>& op1,    \
+  AP_INLINE AP_NODEBUG bool operator REL_OP(const ap_bit_ref<_AP_W1, _AP_S1>& op1,    \
                               const ap_int_base<_AP_W2, _AP_S2>& op2) { \
     return ap_int_base<1, false>(op1) REL_OP op2;                       \
   }
@@ -2039,7 +2037,7 @@ OP_REL_WITH_BIT(<=)
 #define OP_BIN_WITH_CONCAT(BIN_OP, RTYPE)                                      \
   template <int _AP_W1, typename _AP_T1, int _AP_W2, typename _AP_T2,          \
             int _AP_W3, bool _AP_S3>                                           \
-  INLINE typename ap_int_base<_AP_W3, _AP_S3>::template RType<_AP_W1 + _AP_W2, \
+  AP_INLINE typename ap_int_base<_AP_W3, _AP_S3>::template RType<_AP_W1 + _AP_W2, \
                                                               false>::RTYPE    \
   operator BIN_OP(const ap_int_base<_AP_W3, _AP_S3>& op1,                      \
                   const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>& op2) {  \
@@ -2048,7 +2046,7 @@ OP_REL_WITH_BIT(<=)
   }                                                                            \
   template <int _AP_W1, typename _AP_T1, int _AP_W2, typename _AP_T2,          \
             int _AP_W3, bool _AP_S3>                                           \
-  INLINE typename ap_int_base<_AP_W1 + _AP_W2,                                 \
+  AP_INLINE typename ap_int_base<_AP_W1 + _AP_W2,                                 \
                               false>::template RType<_AP_W3, _AP_S3>::RTYPE    \
   operator BIN_OP(const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>& op1,    \
                   const ap_int_base<_AP_W3, _AP_S3>& op2) {                    \
@@ -2073,7 +2071,7 @@ OP_BIN_WITH_CONCAT(<<, arg1)
 #define OP_ASSIGN_WITH_CONCAT(ASSIGN_OP)                                       \
   template <int _AP_W1, typename _AP_T1, int _AP_W2, typename _AP_T2,          \
             int _AP_W3, bool _AP_S3>                                           \
-  INLINE typename ap_int_base<_AP_W3, _AP_S3>::template RType<_AP_W1 + _AP_W2, \
+  AP_INLINE typename ap_int_base<_AP_W3, _AP_S3>::template RType<_AP_W1 + _AP_W2, \
                                                               false>::RTYPE    \
   operator ASSIGN_OP(                                                          \
       const ap_int_base<_AP_W3, _AP_S3>& op1,                                  \
@@ -2083,7 +2081,7 @@ OP_BIN_WITH_CONCAT(<<, arg1)
   }                                                                            \
   template <int _AP_W1, typename _AP_T1, int _AP_W2, typename _AP_T2,          \
             int _AP_W3, bool _AP_S3>                                           \
-  INLINE typename ap_int_base<_AP_W1 + _AP_W2,                                 \
+  AP_INLINE typename ap_int_base<_AP_W1 + _AP_W2,                                 \
                               false>::template RType<_AP_W3, _AP_S3>::RTYPE    \
   operator ASSIGN_OP(const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>& op1, \
                      const ap_int_base<_AP_W3, _AP_S3>& op2) {                 \
@@ -2112,7 +2110,7 @@ OP_ASSIGN_WITH_CONCAT(<<=)
 #define OP_REL_WITH_CONCAT(REL_OP)                                    \
   template <int _AP_W1, typename _AP_T1, int _AP_W2, typename _AP_T2, \
             int _AP_W3, bool _AP_S3>                                  \
-  INLINE NODEBUG bool operator REL_OP(                                        \
+  AP_INLINE AP_NODEBUG bool operator REL_OP(                                        \
       const ap_int_base<_AP_W3, _AP_S3>& op1,                         \
       const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>& op2) {     \
     /* convert ap_concat_ref to ap_int_base */                        \
@@ -2120,7 +2118,7 @@ OP_ASSIGN_WITH_CONCAT(<<=)
   }                                                                   \
   template <int _AP_W1, typename _AP_T1, int _AP_W2, typename _AP_T2, \
             int _AP_W3, bool _AP_S3>                                  \
-  INLINE NODEBUG bool operator REL_OP(                                        \
+  AP_INLINE AP_NODEBUG bool operator REL_OP(                                        \
       const ap_concat_ref<_AP_W1, _AP_T1, _AP_W2, _AP_T2>& op1,       \
       const ap_int_base<_AP_W3, _AP_S3>& op2) {                       \
     /* convert ap_concat_ref to ap_int_base */                        \

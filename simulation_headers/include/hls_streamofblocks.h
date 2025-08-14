@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -20,7 +20,9 @@
 #include <condition_variable>
 #include "hls_stream.h"
 
-#define ALWAYS_INLINE inline 
+#ifndef AP_INLINE
+#define AP_INLINE inline 
+#endif
 #define UNUSED_ARG 
 
 #ifndef __has_attribute
@@ -42,7 +44,7 @@ class stream_buf {
   int writeLocks;
  
  public:
-  ALWAYS_INLINE stream_buf(int depth, const char *n)
+  AP_INLINE stream_buf(int depth, const char *n)
     : name(n ? n : "stream_of_blocks"), readLocks(0), 
       writeLocks(0), invalid(false){}
 
@@ -67,7 +69,7 @@ class stream_buf {
     }
   }
 
-  ALWAYS_INLINE __STREAM_T__& read_acquire() {
+  AP_INLINE __STREAM_T__& read_acquire() {
     // needed to start the deadlock detector and size reporter
     stream_globals<false>::start_threads();
 
@@ -103,7 +105,7 @@ class stream_buf {
     return *data.front();
   }
  
-  ALWAYS_INLINE void read_release() {
+  AP_INLINE void read_release() {
     readLocks--;
     if (readLocks != 0) {
         std::cerr << "INTERNAL ERROR: releasing " << name << " for reading too many times." << std::endl;
@@ -115,7 +117,7 @@ class stream_buf {
     data.pop_front();
   }
  
-  ALWAYS_INLINE __STREAM_T__& write_acquire() {
+  AP_INLINE __STREAM_T__& write_acquire() {
     // needed to start the deadlock detector and size reporter
     stream_globals<false>::start_threads();
 
@@ -135,7 +137,7 @@ class stream_buf {
     return *data.back();
   }
 
-  ALWAYS_INLINE void write_release() {
+  AP_INLINE void write_release() {
     writeLocks--;
     if (writeLocks != 0) {
         std::cerr << "INTERNAL ERROR: releasing " << name << " for writing too many times." << std::endl;
@@ -143,14 +145,14 @@ class stream_buf {
     }
   }
  
-  ALWAYS_INLINE bool empty() {
+  AP_INLINE bool empty() {
 #ifndef HLS_STREAM_THREAD_UNSAFE
     std::unique_lock<std::mutex> ul(mutex);
 #endif
     return !data.size();
   }
 
-  ALWAYS_INLINE bool full() {
+  AP_INLINE bool full() {
     return false;
   }
 
@@ -182,25 +184,25 @@ class read_buf {
   __STREAM_T__* buf;
  
  public:
-  ALWAYS_INLINE read_buf(stream_of_blocks<__STREAM_T__>& s) : res(s) {
+  AP_INLINE read_buf(stream_of_blocks<__STREAM_T__>& s) : res(s) {
   }
 
-  ALWAYS_INLINE void acquire() {
+  AP_INLINE void acquire() {
     buf = &res.read_acquire();
   }
 
-  ALWAYS_INLINE void release() {
+  AP_INLINE void release() {
     res.read_release();
   }
 
-  ALWAYS_INLINE ~read_buf() { }
+  AP_INLINE ~read_buf() { }
 
-  ALWAYS_INLINE operator __STREAM_T__&() { 
+  AP_INLINE operator __STREAM_T__&() { 
     res.buf.read_check();
     return *buf;
   }
 
-  ALWAYS_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) { 
+  AP_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) { 
     res.buf.read_check();
     buf = &val; 
     return *buf; 
@@ -213,25 +215,25 @@ class write_buf {
   __STREAM_T__* buf;
  
  public:
-  ALWAYS_INLINE write_buf(stream_of_blocks<__STREAM_T__>& s) : res(s) {
+  AP_INLINE write_buf(stream_of_blocks<__STREAM_T__>& s) : res(s) {
   }
 
-  ALWAYS_INLINE void acquire() {
+  AP_INLINE void acquire() {
     buf = &res.write_acquire();
   }
 
-  ALWAYS_INLINE void release() {
+  AP_INLINE void release() {
     res.write_release();
   }
 
-  ALWAYS_INLINE ~write_buf() { }
+  AP_INLINE ~write_buf() { }
 
-  ALWAYS_INLINE operator __STREAM_T__&() { 
+  AP_INLINE operator __STREAM_T__&() { 
     res.buf.write_check();
     return *buf; 
   }
 
-  ALWAYS_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) {
+  AP_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) {
     res.buf.write_check();
     buf = &val; 
     return *buf; 
@@ -245,13 +247,13 @@ class read_lock {
   __STREAM_T__& buf;
  
  public:
-  ALWAYS_INLINE read_lock(stream_of_blocks<__STREAM_T__>& s) : res(s), buf(res.read_acquire()) { }
+  AP_INLINE read_lock(stream_of_blocks<__STREAM_T__>& s) : res(s), buf(res.read_acquire()) { }
 
-  ALWAYS_INLINE ~read_lock() { res.read_release(); }
+  AP_INLINE ~read_lock() { res.read_release(); }
 
-  ALWAYS_INLINE operator __STREAM_T__&() { return buf; }
+  AP_INLINE operator __STREAM_T__&() { return buf; }
 
-  ALWAYS_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) { return buf = val; }
+  AP_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) { return buf = val; }
 };
  
 template <typename __STREAM_T__>
@@ -260,13 +262,13 @@ class write_lock {
   __STREAM_T__& buf;
  
  public:
-  ALWAYS_INLINE write_lock(stream_of_blocks<__STREAM_T__>& s) : res(s), buf(res.write_acquire()) { }
+  AP_INLINE write_lock(stream_of_blocks<__STREAM_T__>& s) : res(s), buf(res.write_acquire()) { }
 
-  ALWAYS_INLINE ~write_lock() { res.write_release(); }
+  AP_INLINE ~write_lock() { res.write_release(); }
 
-  ALWAYS_INLINE operator __STREAM_T__&() { return buf; }
+  AP_INLINE operator __STREAM_T__&() { return buf; }
 
-  ALWAYS_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) { return buf = val; }
+  AP_INLINE __STREAM_T__& operator=(const __STREAM_T__& val) { return buf = val; }
 };
  
 template <typename __STREAM_T__>
@@ -281,20 +283,20 @@ class stream_of_blocks<__STREAM_T__, 2> {
   stream_buf<__STREAM_T__> buf;
  
  public:
-  ALWAYS_INLINE stream_of_blocks(int depth=2, UNUSED_ARG char *name=0): buf(depth, name) { }
+  AP_INLINE stream_of_blocks(int depth=2, UNUSED_ARG char *name=0): buf(depth, name) { }
 
-  ALWAYS_INLINE bool full() { return buf.full(); }
+  AP_INLINE bool full() { return buf.full(); }
 
-  ALWAYS_INLINE bool empty() { return buf.empty(); }
+  AP_INLINE bool empty() { return buf.empty(); }
 
  private:
-  ALWAYS_INLINE __STREAM_T__& read_acquire() { return buf.read_acquire(); }
+  AP_INLINE __STREAM_T__& read_acquire() { return buf.read_acquire(); }
 
-  ALWAYS_INLINE void read_release() { buf.read_release(); }
+  AP_INLINE void read_release() { buf.read_release(); }
  
-  ALWAYS_INLINE __STREAM_T__& write_acquire() { return buf.write_acquire(); }
+  AP_INLINE __STREAM_T__& write_acquire() { return buf.write_acquire(); }
 
-  ALWAYS_INLINE void write_release() { buf.write_release(); }
+  AP_INLINE void write_release() { buf.write_release(); }
 
   //__STREAM_T__& read(); TBD
   //void write(const __STREAM_T__&); TBD
@@ -310,7 +312,7 @@ class stream_of_blocks: public stream_of_blocks<__STREAM_T__, 2> {
   friend class write_lock<__STREAM_T__>; 
 
  public:
-  ALWAYS_INLINE stream_of_blocks(): stream_of_blocks<__STREAM_T__, 2>(DEPTH) {}
+  AP_INLINE stream_of_blocks(): stream_of_blocks<__STREAM_T__, 2>(DEPTH) {}
 };
 
 } // end of namespace hls

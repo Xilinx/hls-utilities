@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 #ifndef __HLS_VECTOR_H__
@@ -14,19 +14,25 @@ namespace hls {
 
 #ifdef __SYNTHESIS__
 #define SYN_PRAGMA(PRAG) _Pragma(#PRAG)
-#ifndef NODEBUG
-#define NODEBUG __attribute__((nodebug))
-#endif // NODEBUG
+#ifndef AP_NODEBUG
+#define AP_NODEBUG __attribute__((nodebug))
+#endif // AP_NODEBUG
 #else
 #define SYN_PRAGMA(PRAG)
-#ifndef NODEBUG
-#define NODEBUG
-#endif // NODEBUG
+#ifndef AP_NODEBUG
+#define AP_NODEBUG
+#endif // AP_NODEBUG
 #endif // __SYNTHESIS__
 
-#ifndef INLINE
-#define INLINE [[gnu::always_inline]]
+#ifdef __SYNTHESIS__
+#ifndef AP_INLINE
+#define AP_INLINE inline __attribute__((always_inline))
 #endif
+#else
+#ifndef AP_INLINE
+#define AP_INLINE inline
+#endif
+#endif // __SYNTHESIS__
 
 namespace details {
 
@@ -100,7 +106,7 @@ public:
 protected:
   /// Pragma setter (hack until we support pragma on types)
   /// Note: must be used on all functions if possible
-  INLINE NODEBUG void pragma() const {
+  AP_INLINE AP_NODEBUG void pragma() const {
     SYN_PRAGMA(HLS AGGREGATE variable=this)
   }
 
@@ -122,7 +128,7 @@ public:
   ///       as we want this class to be usable in union (POD requirement).
 
   /// Construct from T (scalar)
-  INLINE vector(const T &val) {
+  AP_INLINE vector(const T &val) {
     pragma();
     for (size_t i = 0; i < N; ++i) {
       SYN_PRAGMA(HLS UNROLL)
@@ -131,12 +137,12 @@ public:
   }
 
   /// Construct from std::array<T, N>
-  INLINE NODEBUG vector(const std::array<T, N> &data) : data{data} {
+  AP_INLINE AP_NODEBUG vector(const std::array<T, N> &data) : data{data} {
     pragma();
   }
 
   /// Construct from std::initializer_list<T>
-  INLINE vector(std::initializer_list<T> l) {
+  AP_INLINE vector(std::initializer_list<T> l) {
     pragma();
     assert(l.size() == N &&
            "Initializer list must be the same size as the vector");
@@ -147,17 +153,17 @@ public:
   }
 
   /// Array-like operator[]
-  INLINE NODEBUG T &operator[](size_t idx) {
+  AP_INLINE AP_NODEBUG T &operator[](size_t idx) {
     pragma();
     return data[idx];
   }
-  INLINE NODEBUG const T &operator[](size_t idx) const {
+  AP_INLINE AP_NODEBUG const T &operator[](size_t idx) const {
     pragma();
     return data[idx];
   }
 
 #define INPLACE_PREUNOP(OP)                                                    \
-  INLINE vector &operator OP() {                                       \
+  AP_INLINE vector &operator OP() {                                       \
     pragma();                                                                  \
     for (size_t i = 0; i < N; ++i) {                                           \
       SYN_PRAGMA(HLS UNROLL)                                                   \
@@ -172,7 +178,7 @@ public:
 #undef INPLACE_PREUNOP
 
 #define INPLACE_POSTUNOP(OP)                                                   \
- INLINE NODEBUG vector operator OP(int) {                                      \
+ AP_INLINE AP_NODEBUG vector operator OP(int) {                                      \
     pragma();                                                                  \
     vector orig = *this;                                                       \
     OP *this;                                                                  \
@@ -185,7 +191,7 @@ public:
 #undef INPLACE_POSTUNOP
 
 #define INPLACE_BINOP(OP)                                                      \
- INLINE vector &operator OP(const vector &rhs) {                       \
+ AP_INLINE vector &operator OP(const vector &rhs) {                       \
     pragma();                                                                  \
     rhs.pragma();                                                              \
     for (size_t i = 0; i < N; ++i) {                                           \
@@ -209,7 +215,7 @@ public:
 #undef INPLACE_BINOP
 
 #define REDUCE_OP(NAME, OP)                                                    \
-  INLINE T reduce_##NAME() const {                                             \
+  AP_INLINE T reduce_##NAME() const {                                             \
     pragma();                                                                  \
     T res = data[0];                                                           \
     for (size_t i = 1; i < N; ++i) {                                           \
@@ -228,7 +234,7 @@ public:
 #undef REDUCE_OP
 
 #define LEXICO_OP(OP) \
-  INLINE friend bool operator OP(const vector &lhs, const vector &rhs) {       \
+  AP_INLINE friend bool operator OP(const vector &lhs, const vector &rhs) {       \
     lhs.pragma();                                                              \
     rhs.pragma();                                                              \
     for (size_t i = 0; i < N; ++i) {                                           \
@@ -241,7 +247,7 @@ public:
   }
 
 #define COMPARE_OP(OP)                                                         \
-  INLINE friend vector<bool, N> operator OP(const vector &lhs,                 \
+  AP_INLINE friend vector<bool, N> operator OP(const vector &lhs,                 \
                                             const vector &rhs) {               \
     lhs.pragma();                                                              \
     rhs.pragma();                                                              \
@@ -264,7 +270,7 @@ public:
 #undef COMPARE_OP
 
 #define BINARY_OP(OP, INPLACE_OP)                                              \
-  INLINE friend vector operator OP(vector lhs, const vector &rhs) {            \
+  AP_INLINE friend vector operator OP(vector lhs, const vector &rhs) {            \
     lhs.pragma();                                                              \
     rhs.pragma();                                                              \
     return lhs INPLACE_OP rhs;                                                 \

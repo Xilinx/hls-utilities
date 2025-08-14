@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -40,9 +40,15 @@ namespace hls {
 
 namespace ip_fir {
 
-#ifndef INLINE
-#define INLINE inline __attribute__((always_inline))
+#ifdef __SYNTHESIS__
+#ifndef AP_INLINE
+#define AP_INLINE inline __attribute__((always_inline))
 #endif
+#else
+#ifndef AP_INLINE
+#define AP_INLINE inline
+#endif
+#endif // __SYNTHESIS__
 
 static const char* firErrChkHead = "ERROR:hls::fir ";
 
@@ -798,7 +804,9 @@ template<unsigned int num_coefficients,
          unsigned int inter_col_pipe_length,
          unsigned int col_config,
          enum hls::ip_fir::config_sync_mode s_config_sync_mode,
-         enum hls::ip_fir::config_method s_config_method>
+         enum hls::ip_fir::config_method s_config_method,
+         unsigned in_length,
+         unsigned out_length>
 struct fir_config : vivado_fir_config<num_coefficients, num_coeff_sets> {
     static const unsigned input_width = data_width;
     static const unsigned input_fractional_bits = data_fractional_bits;
@@ -809,8 +817,8 @@ struct fir_config : vivado_fir_config<num_coefficients, num_coeff_sets> {
     static const unsigned config_width = 8;
     static const unsigned num_coeffs = num_coefficients;
     static const unsigned coeff_sets = num_coeff_sets;
-    static const unsigned input_length = num_coefficients;
-    static const unsigned output_length = num_coefficients;
+    static const unsigned input_length = in_length;
+    static const unsigned output_length = out_length;
     static const unsigned num_channels = num_chans;
     static const unsigned total_num_coeff = num_coefficients * num_coeff_sets;
     static const bool reloadable = coefficient_reload;
@@ -868,6 +876,8 @@ template<unsigned int num_coeffs,
          unsigned int output_fractional_bits = 0,
          unsigned int num_channels = 1,
          unsigned int coeff_sets = 1,
+         unsigned int input_length = num_coeffs,
+         unsigned int output_length = num_coeffs,
          bool coefficient_reload = false,
          enum hls::ip_fir::filter_type filter_type = hls::ip_fir::single_rate,
          enum hls::ip_fir::rate_change_type rate_change_type = hls::ip_fir::integer,
@@ -894,8 +904,8 @@ template<unsigned int num_coeffs,
          typename data_in_t,
          typename data_out_t>
 void vivado_fir(
-    data_in_t in[num_coeffs * num_channels],
-    data_out_t out[num_coeffs * num_channels])
+    data_in_t in[input_length * num_channels],
+    data_out_t out[output_length * num_channels])
 {
     const float sampleperiod = (float) sampleperiod_num / (float) sampleperiod_den;
     const unsigned data_axi_width = ((data_width+7)>>3)<<3;
@@ -939,22 +949,26 @@ void vivado_fir(
          inter_column_pipe_length,
          column_config,
          s_config_sync_mode,
-         s_config_method> config;
+         s_config_method, 
+         input_length,
+         output_length> config;
+
+#pragma HLS dataflow
 
     hls::FIR<config> fir;
 
-    data_axi_t fir_in[num_coeffs * num_channels];
+    data_axi_t fir_in[input_length * num_channels];
     #pragma HLS stream variable=fir_in depth=2
     #pragma HLS array_reshape cyclic variable=fir_in factor=CEIL(1./sampleperiod)
 
-    output_axi_t fir_out[num_coeffs * num_channels];
+    output_axi_t fir_out[output_length * num_channels];
     #pragma HLS stream variable=fir_out depth=2
     #pragma HLS array_reshape cyclic variable=fir_out factor=CEIL(1./sampleperiod)
 
     // These copies are needed to widen the data to a multiple of 8, as required by the FIR IP
-    hls::ip_fir::data_copy<data_in_t, data_axi_t, sampleperiod_num, sampleperiod_den, num_coeffs * num_channels>(in, fir_in);
+    hls::ip_fir::data_copy<data_in_t, data_axi_t, sampleperiod_num, sampleperiod_den, input_length * num_channels>(in, fir_in);
     fir.run(fir_in, fir_out);
-    hls::ip_fir::data_copy<output_axi_t, data_out_t, sampleperiod_num, sampleperiod_den, num_coeffs * num_channels>(fir_out, out);
+    hls::ip_fir::data_copy<output_axi_t, data_out_t, sampleperiod_num, sampleperiod_den, output_length * num_channels>(fir_out, out);
 }
 } // namespace dsp
 } // namespace xf

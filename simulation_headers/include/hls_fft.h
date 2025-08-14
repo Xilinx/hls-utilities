@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
 // Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
@@ -51,16 +51,22 @@ enum fft_T3_t { wrapped };
 
 namespace ip_fft {
 
-#ifndef INLINE
-#define INLINE inline __attribute__((always_inline))
+#ifdef __SYNTHESIS__
+#ifndef AP_INLINE
+#define AP_INLINE inline __attribute__((always_inline))
 #endif
+#else
+#ifndef AP_INLINE
+#define AP_INLINE inline
+#endif
+#endif // __SYNTHESIS__
 
 static const char* fftErrChkHead = "ERROR:hls::fft ";
 
 enum ordering {bit_reversed_order = 0, natural_order};
 enum scaling {scaled = 0, unscaled, block_floating_point};
 enum arch {
-	radix_4_burst_io = 1, radix_2_burst_io,
+	radix_4_burst_io = 0, radix_2_burst_io,
 	pipelined_streaming_io, radix_2_lite_burst_io
 };
 enum rounding {truncation = 0, convergent_rounding};
@@ -69,19 +75,26 @@ enum opt {
 	use_luts = 0, use_mults_resources,
 	use_mults_performance, use_xtremedsp_slices
 };
-enum type { fixed_point = 0, floating_point };
-static const char* fft_data_format_str[] = {"fixed_point", "floating_point"};
+enum type { fixed_point = 0, floating_point, native_floating_point };
+static const char* fft_data_format_str[] = {"fixed_point", "floating_point", "native_floating_point"};
+enum ssr {ssr_1 = 1, ssr_2 = 2, ssr_4 = 4};
+
+template<const int SSR_SAMPLE> struct data_item{
+	std::complex<float> data[SSR_SAMPLE];
+};
+
+// TODO: add a checker to make ovflo = false when using native float
 
 struct params_t
 {
 	static const unsigned input_width = 16;
 	static const unsigned output_width = 16;
-	static const unsigned status_width = 8;
+	static const unsigned status_width = 8;	
 	static const unsigned config_width = 16;
 	static const unsigned max_nfft = 10;
 
 	static const bool has_nfft = false;
-	static const unsigned  channels = 1;
+	static const unsigned channels = 1;
 	static const unsigned arch_opt = pipelined_streaming_io;
 	static const unsigned phase_factor_width = 16;
 	static const unsigned ordering_opt = bit_reversed_order;
@@ -95,6 +108,8 @@ struct params_t
 	static const bool mem_hybrid = false;
 	static const unsigned complex_mult_type = use_mults_resources;
 	static const unsigned butterfly_type = use_luts;
+	static const unsigned super_sample_rate = ssr_1;
+	static const bool use_native_float = false;
 
 	//not supported params:
 	static const bool xk_index = false;
@@ -110,7 +125,7 @@ struct config_t
 
 	ap_uint<CONFIG_T::config_width> data;
 	// Check CONFIG_T::config_width
-	INLINE void checkBitWidth(ip_fft::type data_type = ip_fft::fixed_point)
+	AP_INLINE void checkBitWidth(ip_fft::type data_type = ip_fft::fixed_point)
 	{
 #ifndef AESL_SYN
 		const unsigned max_nfft = CONFIG_T::max_nfft;
@@ -134,7 +149,7 @@ struct config_t
 #endif
 	}
 
-	INLINE void checkCpLen(bool cp_len_enable)
+	AP_INLINE void checkCpLen(bool cp_len_enable)
 	{
 #ifndef AESL_SYN
 		if (cp_len_enable == 0)
@@ -147,7 +162,7 @@ struct config_t
 #endif
 	}
 
-	INLINE void checkSch(unsigned scaling_opt)
+	AP_INLINE void checkSch(unsigned scaling_opt)
 	{
 #ifndef AESL_SYN
 		if (scaling_opt != unsigned(scaled))
@@ -160,7 +175,7 @@ struct config_t
 #endif
 	}
 
-	INLINE void setNfft(unsigned nfft)
+	AP_INLINE void setNfft(unsigned nfft)
 	{
 		//checkBitWidth();
 		if (CONFIG_T::has_nfft) {
@@ -175,7 +190,7 @@ struct config_t
 #endif
 		}
 	}
-	INLINE unsigned getNfft()
+	AP_INLINE unsigned getNfft()
 	{
 		//checkBitWidth();
 		if (CONFIG_T::has_nfft)
@@ -183,7 +198,7 @@ struct config_t
 		else
 			return CONFIG_T::max_nfft;
 	}
-	INLINE unsigned getNfft() const
+	AP_INLINE unsigned getNfft() const
 	{
 		//checkBitWidth();
 		if (CONFIG_T::has_nfft)
@@ -192,7 +207,7 @@ struct config_t
 			return CONFIG_T::max_nfft;
 	}
 
-	INLINE void setCpLen(unsigned cp_len)
+	AP_INLINE void setCpLen(unsigned cp_len)
 	{
 		//checkBitWidth();
 		checkCpLen(CONFIG_T::cyclic_prefix_insertion);
@@ -201,7 +216,7 @@ struct config_t
 		unsigned cp_len_bits = CONFIG_T::cyclic_prefix_insertion ? (((max_nfft + 7) >> 3) << 3) : 0; // Padding
 		data.range(cp_len_bits+nfft_bits-1, nfft_bits) = cp_len;
 	}
-	INLINE unsigned getCpLen()
+	AP_INLINE unsigned getCpLen()
 	{
 		//checkBitWidth();
 		checkCpLen(CONFIG_T::cyclic_prefix_insertion);
@@ -212,7 +227,7 @@ struct config_t
 		ret = data.range(cp_len_bits+nfft_bits-1, nfft_bits);
 		return ret;
 	}
-	INLINE unsigned getCpLen() const
+	AP_INLINE unsigned getCpLen() const
 	{
 		//checkBitWidth();
 		checkCpLen(CONFIG_T::cyclic_prefix_insertion);
@@ -224,7 +239,7 @@ struct config_t
 		return ret;
 	}
 
-	INLINE void setDir(bool dir, unsigned ch = 0)
+	AP_INLINE void setDir(bool dir, unsigned ch = 0)
 	{
 		unsigned max_nfft = CONFIG_T::max_nfft;
 		unsigned nfft_bits = CONFIG_T::has_nfft ? 8 : 0; // Padding to 8 bits
@@ -233,7 +248,7 @@ struct config_t
 		unsigned ch_bits = 1;
 		data.range(ch_bits*(ch+1)+ch_lo-1, ch_bits*ch+ch_lo) = dir;
 	}
-	INLINE unsigned getDir(unsigned ch = 0)
+	AP_INLINE unsigned getDir(unsigned ch = 0)
 	{
 		unsigned max_nfft = CONFIG_T::max_nfft;
 		unsigned nfft_bits = CONFIG_T::has_nfft ? 8 : 0; // Padding to 8 bits
@@ -242,7 +257,7 @@ struct config_t
 		unsigned ch_bits = 1;
 		return data.range(ch_bits*(ch+1)+ch_lo-1, ch_bits*ch+ch_lo);
 	}
-	INLINE unsigned getDir(unsigned ch = 0) const
+	AP_INLINE unsigned getDir(unsigned ch = 0) const
 	{
 		unsigned max_nfft = CONFIG_T::max_nfft;
 		unsigned nfft_bits = CONFIG_T::has_nfft ? 8 : 0; // Padding to 8 bits
@@ -252,7 +267,7 @@ struct config_t
 		return data.range(ch_bits*(ch+1)+ch_lo-1, ch_bits*ch+ch_lo);
 	}
 
-	INLINE void setSch(unsigned sch, unsigned ch = 0)
+	AP_INLINE void setSch(unsigned sch, unsigned ch = 0)
 	{
 		//checkBitWidth();
 		checkSch(CONFIG_T::scaling_opt);
@@ -267,7 +282,7 @@ struct config_t
 		unsigned sch_lo = ch_lo + CONFIG_T::channels * ch_bits;
 		data.range(sch_bits*(ch+1)+sch_lo-1, sch_bits*ch+sch_lo) = sch;
 	}
-	INLINE unsigned getSch(unsigned ch = 0)
+	AP_INLINE unsigned getSch(unsigned ch = 0)
 	{
 		//checkBitWidth();
 		checkSch(CONFIG_T::scaling_opt);
@@ -282,7 +297,7 @@ struct config_t
 		unsigned sch_lo = ch_lo + CONFIG_T::channels * ch_bits;
 		return data.range(sch_bits*(ch+1)+sch_lo-1, sch_bits*ch+sch_lo);
 	}
-	INLINE unsigned getSch(unsigned ch = 0) const
+	AP_INLINE unsigned getSch(unsigned ch = 0) const
 	{
 		//checkBitWidth();
 		checkSch(CONFIG_T::scaling_opt);
@@ -307,7 +322,7 @@ struct status_t
 
 
 	// Check CONFIG_T::status_width
-	INLINE void checkBitWidth()
+	AP_INLINE void checkBitWidth()
 	{
 #ifndef AESL_SYN
 		const bool has_ovflo = CONFIG_T::ovflo && (CONFIG_T::scaling_opt == unsigned(ip_fft::scaled));
@@ -324,7 +339,7 @@ struct status_t
 #endif
 	}
 
-	INLINE void checkBlkExp(unsigned scaling_opt)
+	AP_INLINE void checkBlkExp(unsigned scaling_opt)
 	{
 #ifndef AESL_SYN
 		if (scaling_opt != unsigned(block_floating_point))
@@ -337,7 +352,7 @@ struct status_t
 #endif
 	}
 
-	INLINE void checkOvflo(bool has_ovflo)
+	AP_INLINE void checkOvflo(bool has_ovflo)
 	{
 #ifndef AESL_SYN
 		if (!has_ovflo)
@@ -351,20 +366,20 @@ struct status_t
 #endif
 	}
 
-	INLINE void setBlkExp(status_data_t exp)
+	AP_INLINE void setBlkExp(status_data_t exp)
 	{
 		checkBitWidth();
 		checkBlkExp(CONFIG_T::scaling_opt);
 		data = exp;
 	}
-	INLINE unsigned getBlkExp(unsigned ch = 0)
+	AP_INLINE unsigned getBlkExp(unsigned ch = 0)
 	{
 		checkBitWidth();
 		unsigned blk_exp_bits = (CONFIG_T::scaling_opt == unsigned(block_floating_point)) ? 8 : 0; // padding to 8 bits
 		checkBlkExp(CONFIG_T::scaling_opt);
 		return data.range(blk_exp_bits*(ch+1)-1, blk_exp_bits*ch);
 	}
-	INLINE unsigned getBlkExp(unsigned ch = 0) const
+	AP_INLINE unsigned getBlkExp(unsigned ch = 0) const
 	{
 		checkBitWidth();
 		unsigned blk_exp_bits = (CONFIG_T::scaling_opt == unsigned(block_floating_point)) ? 8 : 0; // padding to 8 bits
@@ -372,14 +387,14 @@ struct status_t
 		return data.range(blk_exp_bits*(ch+1)-1, blk_exp_bits*ch);
 	}
 
-	INLINE void setOvflo(status_data_t ovflo)
+	AP_INLINE void setOvflo(status_data_t ovflo)
 	{
 		checkBitWidth();
 		bool has_ovflo = CONFIG_T::ovflo && (CONFIG_T::scaling_opt == unsigned(scaled));
 		checkOvflo(has_ovflo);
 		data = ovflo;
 	}
-	INLINE unsigned getOvflo(unsigned ch = 0)
+	AP_INLINE unsigned getOvflo(unsigned ch = 0)
 	{
 		checkBitWidth();
 		bool has_ovflo = CONFIG_T::ovflo && (CONFIG_T::scaling_opt == unsigned(scaled));
@@ -387,7 +402,7 @@ struct status_t
 		checkOvflo(has_ovflo);
 		return data.range(ovflo_bits*(ch+1)-1, ovflo_bits*ch);
 	}
-	INLINE unsigned getOvflo(unsigned ch = 0) const
+	AP_INLINE unsigned getOvflo(unsigned ch = 0) const
 	{
 		checkBitWidth();
 		bool has_ovflo = CONFIG_T::ovflo && (CONFIG_T::scaling_opt == unsigned(scaled));
@@ -399,8 +414,6 @@ struct status_t
 
 } // namespace hls::ip_fft
 
-using namespace std;
-
 template<
 typename CONFIG_T,
 char FFT_INPUT_WIDTH,
@@ -409,11 +422,12 @@ typename FFT_INPUT_T,
 typename FFT_OUTPUT_T,
 int FFT_LENGTH,
 char FFT_CHANNELS,
-ip_fft::type FFT_DATA_FORMAT
+ip_fft::type FFT_DATA_FORMAT,
+char FFT_super_sample_rate
 >
-INLINE void fft_core(
-		complex<FFT_INPUT_T> xn[FFT_CHANNELS][FFT_LENGTH],
-		complex<FFT_OUTPUT_T> xk[FFT_CHANNELS][FFT_LENGTH],
+AP_INLINE void fft_core(
+		std::complex<FFT_INPUT_T> xn[FFT_CHANNELS][FFT_LENGTH],
+		std::complex<FFT_OUTPUT_T> xk[FFT_CHANNELS][FFT_LENGTH],
 		ip_fft::status_t<CONFIG_T>* status,
 		ip_fft::config_t<CONFIG_T>* config_ch)
 {
@@ -429,7 +443,7 @@ INLINE void fft_core(
 			//"component_name", "xfft_0",
 			"channels", FFT_CHANNELS,
 			"transform_length", 1 << CONFIG_T::max_nfft,
-			"implementation_options", CONFIG_T::arch_opt-1,
+			"implementation_options", CONFIG_T::arch_opt,
 			"run_time_configurable_transform_length", CONFIG_T::has_nfft,
 			"data_format", ip_fft::fft_data_format_str[FFT_DATA_FORMAT],
 			"input_width", FFT_INPUT_WIDTH,
@@ -451,7 +465,8 @@ INLINE void fft_core(
 			CONFIG_T::stages_block_ram,
 			"memory_options_hybrid", CONFIG_T::mem_hybrid,
 			"complex_mult_type", CONFIG_T::complex_mult_type,
-			"butterfly_type", CONFIG_T::butterfly_type
+			"butterfly_type", CONFIG_T::butterfly_type,
+			"super_sample_rates", FFT_super_sample_rate
 	);
 	ip_fft::status_t<CONFIG_T> status_t;
 	ip_fft::config_t<CONFIG_T> config_ch_t = *config_ch;
@@ -604,14 +619,83 @@ INLINE void fft_core(
 		exit(1);
 	}
 
-	if (FFT_DATA_FORMAT == ip_fft::floating_point)
-	{
-		if (CONFIG_T::phase_factor_width != 24 && CONFIG_T::phase_factor_width != 25)
-		{
-			std::cerr << ip_fft::fftErrChkHead << "FFT_PHASE_FACTOR_WIDTH = " << (int)CONFIG_T::phase_factor_width
-					<< " is illegal with floating point data format. It should be 24 or 25."
+	if(CONFIG_T::super_sample_rate != ip_fft::ssr_1){
+		if(FFT_DATA_FORMAT != ip_fft::floating_point){
+			std::cerr << ip_fft::fftErrChkHead << "FFT_SUPER_SAMPLE_RATE = " << (int)CONFIG_T::super_sample_rate
+					<< " is illegal with fixed point data format. Should use floating type."
 					<< std::endl;
 			exit(1);
+		}
+		if(!CONFIG_T::use_native_float){
+			std::cerr << ip_fft::fftErrChkHead << "FFT_SUPER_SAMPLE_RATE = " << (int)CONFIG_T::super_sample_rate
+					<< " should be used with setting use_native_float=1."
+					<< std::endl;
+			exit(1);
+		}
+	}
+
+	if (FFT_DATA_FORMAT == ip_fft::floating_point)
+	{
+		if(!CONFIG_T::use_native_float){
+			if (CONFIG_T::phase_factor_width != 24 && CONFIG_T::phase_factor_width != 25)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_PHASE_FACTOR_WIDTH = " << (int)CONFIG_T::phase_factor_width
+						<< " is illegal with floating point data format. It should be 24 or 25."
+						<< std::endl;
+				exit(1);
+			}
+		}
+		else {
+			// native float specific checks
+			if(CONFIG_T::has_nfft != 0)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_HAS_NFFT = " << (int)CONFIG_T::has_nfft
+						<< " is illegal with native floating point data format. It should be 0."
+						<< std::endl;
+				exit(1);
+			}
+			if(CONFIG_T::phase_factor_width != 32)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_PHASE_FACTOR_WIDTH = " << (int)CONFIG_T::phase_factor_width
+						<< " is illegal with native floating point data format. It should be 32."
+						<< std::endl;
+				exit(1);
+			}
+			if(CONFIG_T::ordering_opt != ip_fft::natural_order)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_ORDERING_OPT = bit_reversed_order" 
+						<< " is illegal with native floating point data format. It should be natural_order."
+						<< std::endl;
+				exit(1);
+			}
+			if(CONFIG_T::ovflo != false)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_OVFLO = " << CONFIG_T::ovflo
+						<< " is illegal with native floating point data format. It should be false."
+						<< std::endl;
+				exit(1);
+			}
+			if(CONFIG_T::complex_mult_type != ip_fft::use_mults_performance)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_COMPLEX_MULT_TYPE"
+						<< " is illegal with native floating point data format. It should be use_mults_performance."
+						<< std::endl;
+				exit(1);
+			}
+			if(CONFIG_T::butterfly_type != ip_fft::use_xtremedsp_slices)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_BUTTERFLY_TYPE"
+						<< " is illegal with native floating point data format. It should be use_xtremedsp_slices."
+						<< std::endl;
+				exit(1);
+			}
+			if(CONFIG_T::super_sample_rate == ip_fft::ssr_1)
+			{
+				std::cerr << ip_fft::fftErrChkHead << "FFT_SUPER_SAMPLE_RATE = 1"
+						<< " is illegal with native floating point data format. It should be 2 or 4."
+						<< std::endl;
+				exit(1);
+			}
 		}
 	}
 	else if (CONFIG_T::phase_factor_width < 8 || CONFIG_T::phase_factor_width > 34)
@@ -626,14 +710,16 @@ INLINE void fft_core(
 
 	// Build up the C model generics structure
 	generics.C_NFFT_MAX      = CONFIG_T::max_nfft;
-	generics.C_ARCH          = CONFIG_T::arch_opt;
+	generics.C_ARCH          = CONFIG_T::arch_opt+1;
 	generics.C_HAS_NFFT      = CONFIG_T::has_nfft;
 	generics.C_INPUT_WIDTH   = FFT_INPUT_WIDTH;
 	generics.C_TWIDDLE_WIDTH = CONFIG_T::phase_factor_width;
 	generics.C_HAS_SCALING   = CONFIG_T::scaling_opt == ip_fft::unscaled ? 0 : 1;
 	generics.C_HAS_BFP       = CONFIG_T::scaling_opt == ip_fft::block_floating_point ? 1 : 0;
 	generics.C_HAS_ROUNDING  = CONFIG_T::rounding_opt;
-	generics.C_USE_FLT_PT    = FFT_DATA_FORMAT == ip_fft::floating_point ? 1 : 0;
+	generics.C_USE_FLT_PT    = FFT_DATA_FORMAT == ip_fft::floating_point ? (CONFIG_T::use_native_float)? 2 : 1 : 0;
+	generics.C_NSSR 		 = FFT_super_sample_rate;
+	generics.C_SYSTOLICFFT_INV = false;
 
 	// Create an FFT state object
 	state = xilinx_ip_xfft_v9_1_create_state(generics);
@@ -683,11 +769,11 @@ INLINE void fft_core(
 		inputs.scaling_sch_size = stages;
 		for (int i = 0; i < samples ; i++)
 		{
-			complex<FFT_INPUT_T> din = xn[c][i];
+			std::complex<FFT_INPUT_T> din = xn[c][i];
 			inputs.xn_re[i] = (double)din.real();
 			inputs.xn_im[i] = (double)din.imag();
 #ifdef _HLSCLIB_DEBUG_
-std::cout << "xn[" << c "][" << i << ": xn_re = " << inputs .xn_re[i] <<
+std::cout << "xn[" << c << "][" << i << ": xn_re = " << inputs .xn_re[i] <<
 		" xk_im = " <<  inputs.xn_im[i] << endl;
 #endif
 		}
@@ -704,15 +790,17 @@ std::cout << "xn[" << c "][" << i << ": xn_re = " << inputs .xn_re[i] <<
 		/// Debug
 		std::cout << "About to call the C model with:" << std::endl;
 		std::cout << "Generics:" << std::endl;
-		std::cout << "  C_NFFT_MAX = "      << generics.C_NFFT_MAX << std::endl;
-		std::cout << "  C_ARCH = "          << generics.C_ARCH << std::endl;
-		std::cout << "  C_HAS_NFFT = "      << generics.C_HAS_NFFT << std::endl;
-		std::cout << "  C_INPUT_WIDTH = "   << generics.C_INPUT_WIDTH << std::endl;
-		std::cout << "  C_TWIDDLE_WIDTH = " << generics.C_TWIDDLE_WIDTH << std::endl;
-		std::cout << "  C_HAS_SCALING = "   << generics.C_HAS_SCALING << std::endl;
-		std::cout << "  C_HAS_BFP = "       << generics.C_HAS_BFP << std::endl;
-		std::cout << "  C_HAS_ROUNDING = "  << generics.C_HAS_ROUNDING << std::endl;
-		std::cout << "  C_USE_FLT_PT = "    << generics.C_USE_FLT_PT << std::endl;
+		std::cout << "  C_NFFT_MAX = "        << generics.C_NFFT_MAX << std::endl;
+		std::cout << "  C_ARCH = "            << generics.C_ARCH << std::endl;
+		std::cout << "  C_HAS_NFFT = "        << generics.C_HAS_NFFT << std::endl;
+		std::cout << "  C_INPUT_WIDTH = "     << generics.C_INPUT_WIDTH << std::endl;
+		std::cout << "  C_TWIDDLE_WIDTH = "   << generics.C_TWIDDLE_WIDTH << std::endl;
+		std::cout << "  C_HAS_SCALING = "     << generics.C_HAS_SCALING << std::endl;
+		std::cout << "  C_HAS_BFP = "         << generics.C_HAS_BFP << std::endl;
+		std::cout << "  C_HAS_ROUNDING = "    << generics.C_HAS_ROUNDING << std::endl;
+		std::cout << "  C_USE_FLT_PT = "      << generics.C_USE_FLT_PT << std::endl;
+		std::cout << "  C_NSSR = "            << generics.C_NSSR << std::endl;
+		std::cout << "  C_SYSTOLICFFT_INV = " << generics.C_SYSTOLICFFT_INV << std::endl;
 
 		std::cout << "Inputs structure:" << std::endl;
 		std::cout << "  nfft = " << inputs.nfft << std::endl;
@@ -747,7 +835,7 @@ std::cout << "xn[" << c "][" << i << ": xn_re = " << inputs .xn_re[i] <<
 		// Output data
 		for (int i = 0; i < samples; i++)
 		{
-			complex<FFT_OUTPUT_T> dout;
+			std::complex<FFT_OUTPUT_T> dout;
 			unsigned addr_reverse = 0;
 			for (int k = 0; k < NFFT; ++k)
 			{
@@ -757,7 +845,7 @@ std::cout << "xn[" << c "][" << i << ": xn_re = " << inputs .xn_re[i] <<
 			unsigned addr = i;
 			if (CONFIG_T::ordering_opt == ip_fft::bit_reversed_order)
 				addr = addr_reverse;
-			dout = complex<FFT_OUTPUT_T> (outputs.xk_re[addr], outputs.xk_im[addr]);
+			dout = std::complex<FFT_OUTPUT_T> (outputs.xk_re[addr], outputs.xk_im[addr]);
 			xk[c][i] = dout;
 #ifdef _HLSCLIB_DEBUG_
 cout << "xk[" << c "][" << i << ": xk_re = " << outputs.xk_re[addr] <<
@@ -800,11 +888,12 @@ typename FFT_INPUT_T,
 typename FFT_OUTPUT_T,
 int FFT_LENGTH,
 char FFT_CHANNELS,
-ip_fft::type FFT_DATA_FORMAT
+ip_fft::type FFT_DATA_FORMAT,
+char FFT_super_sample_rate
 >
 void fft_core(
-		complex<FFT_INPUT_T> xn[FFT_LENGTH],
-		complex<FFT_OUTPUT_T> xk[FFT_LENGTH],
+		std::complex<FFT_INPUT_T> xn[FFT_LENGTH],
+		std::complex<FFT_OUTPUT_T> xk[FFT_LENGTH],
 		ip_fft::status_t<CONFIG_T>* status,
 		ip_fft::config_t<CONFIG_T>* config_ch)
 {
@@ -815,7 +904,7 @@ void fft_core(
 			//"component_name", "xfft_0",
 			"channels", FFT_CHANNELS,
 			"transform_length", FFT_LENGTH,
-			"implementation_options", CONFIG_T::arch_opt-1,
+			"implementation_options", CONFIG_T::arch_opt,
 			"run_time_configurable_transform_length", CONFIG_T::has_nfft,
 			"data_format", ip_fft::fft_data_format_str[FFT_DATA_FORMAT],
 			"input_width", FFT_INPUT_WIDTH,
@@ -836,7 +925,8 @@ void fft_core(
 			"number_of_stages_using_block_ram_for_data_and_phase_factors", CONFIG_T::stages_block_ram,
 			"memory_options_hybrid", CONFIG_T::mem_hybrid,
 			"complex_mult_type", CONFIG_T::complex_mult_type,
-			"butterfly_type", CONFIG_T::butterfly_type
+			"butterfly_type", CONFIG_T::butterfly_type,
+			"super_sample_rates", FFT_super_sample_rate
 	);
 	ip_fft::status_t<CONFIG_T> status_t;
 	ip_fft::config_t<CONFIG_T> config_ch_t = *config_ch;
@@ -854,8 +944,8 @@ void fft_core(
 	*status = status_t;
 
 #else
-	complex<FFT_INPUT_T> xn_multi_chan [1][FFT_LENGTH];
-	complex<FFT_OUTPUT_T> xk_multi_chan [1][FFT_LENGTH];
+	std::complex<FFT_INPUT_T> xn_multi_chan [1][FFT_LENGTH];
+	std::complex<FFT_OUTPUT_T> xk_multi_chan [1][FFT_LENGTH];
 
 	for(int i=0; i< FFT_LENGTH; i++)
 		xn_multi_chan[0][i] = xn[i];
@@ -868,7 +958,8 @@ void fft_core(
 	FFT_OUTPUT_T,
 	FFT_LENGTH,
 	1,
-	FFT_DATA_FORMAT
+	FFT_DATA_FORMAT,
+	FFT_super_sample_rate
 	>(xn_multi_chan, xk_multi_chan, status, config_ch);
 
 	for(int i=0; i< FFT_LENGTH; i++)
@@ -883,8 +974,8 @@ template<
 typename CONFIG_T
 >
 void fft_syn(
-		hls::stream<complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > > &xn,
-		hls::stream<complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > > &xk,
+		hls::stream<std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > > &xn,
+		hls::stream<std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > > &xk,
 		hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T> > &config_ch_data_V)
 {
@@ -894,7 +985,7 @@ void fft_syn(
 			//"component_name", "xfft_0",
 			"channels", 1,
 			"transform_length", 1 << CONFIG_T::max_nfft,
-			"implementation_options", CONFIG_T::arch_opt-1,
+			"implementation_options", CONFIG_T::arch_opt,
 			"run_time_configurable_transform_length", CONFIG_T::has_nfft,
 			"data_format", ip_fft::fft_data_format_str[ip_fft::fixed_point],
 			"input_width", CONFIG_T::input_width,
@@ -915,7 +1006,8 @@ void fft_syn(
 			"number_of_stages_using_block_ram_for_data_and_phase_factors", CONFIG_T::stages_block_ram,
 			"memory_options_hybrid", CONFIG_T::mem_hybrid,
 			"complex_mult_type", CONFIG_T::complex_mult_type,
-			"butterfly_type", CONFIG_T::butterfly_type
+			"butterfly_type", CONFIG_T::butterfly_type,
+			"super_sample_rates", CONFIG_T::super_sample_rate
 	);
 
 
@@ -943,8 +1035,8 @@ template<
 typename CONFIG_T
 >
 void fft_syn(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T> > &config_ch_data_V)
 {
@@ -954,7 +1046,7 @@ void fft_syn(
 			//"component_name", "xfft_0",
 			"channels", 1,
 			"transform_length", 1 << CONFIG_T::max_nfft,
-			"implementation_options", CONFIG_T::arch_opt-1,
+			"implementation_options", CONFIG_T::arch_opt,
 			"run_time_configurable_transform_length", CONFIG_T::has_nfft,
 			"data_format", ip_fft::fft_data_format_str[ip_fft::fixed_point],
 			"input_width", CONFIG_T::input_width,
@@ -975,7 +1067,8 @@ void fft_syn(
 			"number_of_stages_using_block_ram_for_data_and_phase_factors", CONFIG_T::stages_block_ram,
 			"memory_options_hybrid", CONFIG_T::mem_hybrid,
 			"complex_mult_type", CONFIG_T::complex_mult_type,
-			"butterfly_type", CONFIG_T::butterfly_type
+			"butterfly_type", CONFIG_T::butterfly_type,
+			"super_sample_rates", CONFIG_T::super_sample_rate
 	);
 
 
@@ -1002,8 +1095,8 @@ template<
 typename CONFIG_T
 >
 void fft_syn(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T> > &config_ch_data_V)
 {
@@ -1013,7 +1106,7 @@ void fft_syn(
 			//"component_name", "xfft_0",
 			"channels", CONFIG_T::channels,
 			"transform_length", 1 << CONFIG_T::max_nfft,
-			"implementation_options", CONFIG_T::arch_opt-1,
+			"implementation_options", CONFIG_T::arch_opt,
 			"run_time_configurable_transform_length", CONFIG_T::has_nfft,
 			"data_format", ip_fft::fft_data_format_str[ip_fft::fixed_point],
 			"input_width", CONFIG_T::input_width,
@@ -1034,7 +1127,8 @@ void fft_syn(
 			"number_of_stages_using_block_ram_for_data_and_phase_factors", CONFIG_T::stages_block_ram,
 			"memory_options_hybrid", CONFIG_T::mem_hybrid,
 			"complex_mult_type", CONFIG_T::complex_mult_type,
-			"butterfly_type", CONFIG_T::butterfly_type
+			"butterfly_type", CONFIG_T::butterfly_type,
+			"super_sample_rates", CONFIG_T::super_sample_rate
 	);
 
 	ip_fft::config_t<CONFIG_T> config_tmp = config_ch_data_V.read();
@@ -1064,8 +1158,8 @@ template<
 typename CONFIG_T
 >
 void fft_sim(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch)
 {
@@ -1077,7 +1171,8 @@ void fft_sim(
 	ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1>,
 	1 << CONFIG_T::max_nfft,
 	1,
-	ip_fft::fixed_point
+	ip_fft::fixed_point,
+	CONFIG_T::super_sample_rate
 	>(xn, xk, status, config_ch);
 } // End of 1-channel, fixed-point
 
@@ -1085,11 +1180,11 @@ template<
 typename CONFIG_T
 >
 void data_copy_from_ap_fix_to_ap_uint(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
 		ap_uint<((CONFIG_T::input_width+7)/8)*8*2> xn_cp[1 << CONFIG_T::max_nfft]) {
 
 	for (unsigned i = 0; i < (1 << CONFIG_T::max_nfft); i++) {
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn_tmp = xn[i];
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn_tmp = xn[i];
 		ap_uint<((CONFIG_T::input_width+7)/8)*8*2> xn_cp_tmp;
 		xn_cp_tmp(((CONFIG_T::input_width+7)/8)*8 - 1, 0) = xn_tmp.real().range(((CONFIG_T::input_width+7)/8)*8 - 1, 0);
 		xn_cp_tmp(((CONFIG_T::input_width+7)/8)*8*2 - 1, ((CONFIG_T::input_width+7)/8)*8) = xn_tmp.imag().range(((CONFIG_T::input_width+7)/8)*8 - 1, 0);
@@ -1101,11 +1196,11 @@ template<
 typename CONFIG_T
 >
 void data_copy_from_ap_uint_to_ap_fixed(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xk[1 << CONFIG_T::max_nfft],
 		ap_uint<((CONFIG_T::input_width+7)/8)*8*2> xk_cp[1 << CONFIG_T::max_nfft]) {
 	for (unsigned i = 0; i < (1 << CONFIG_T::max_nfft); i++) {
 		ap_uint<((CONFIG_T::input_width+7)/8)*8*2> xk_cp_tmp = xk_cp[i];
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, 1> > xk_tmp;
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, 1> > xk_tmp;
 		ap_fixed<((CONFIG_T::output_width+7)/8)*8, 1> tmp;
 		tmp.range(((CONFIG_T::output_width+7)/8)*8 - 1, 0) = xk_cp_tmp.range(((CONFIG_T::output_width+7)/8)*8 - 1, 0);
 		xk_tmp.real(tmp);
@@ -1120,8 +1215,8 @@ template<
 typename CONFIG_T
 >
 void  fft(
-		hls::stream<complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > > &xn,
-		hls::stream<complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > > &xk,
+		hls::stream<std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > > &xn,
+		hls::stream<std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > > &xk,
 		hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T> > &config_ch_data_V)
 {
@@ -1130,8 +1225,8 @@ void  fft(
 
 	fft_syn<CONFIG_T>(xn, xk, status_data_V, config_ch_data_V); // inlined
 #else
-	complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn_a[1 << CONFIG_T::max_nfft];
-	complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk_a[1 << CONFIG_T::max_nfft];
+	std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn_a[1 << CONFIG_T::max_nfft];
+	std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk_a[1 << CONFIG_T::max_nfft];
 	ip_fft::status_t<CONFIG_T> status;
 	ip_fft::config_t<CONFIG_T> config;
 
@@ -1151,8 +1246,8 @@ template<
 typename CONFIG_T, fft_T2_t tag
 >
 void  fft(
-		hls::stream<complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > > &xn,
-		hls::stream<complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > > &xk,
+		hls::stream<std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > > &xn,
+		hls::stream<std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > > &xk,
 		hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T> > &config_ch_data_V)
 {
@@ -1161,8 +1256,8 @@ void  fft(
 
 	fft_syn<CONFIG_T>(xn, xk, status_data_V, config_ch_data_V); // inlined
 #else
-	complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn_a[1 << CONFIG_T::max_nfft];
-	complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk_a[1 << CONFIG_T::max_nfft];
+	std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn_a[1 << CONFIG_T::max_nfft];
+	std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk_a[1 << CONFIG_T::max_nfft];
 	ip_fft::status_t<CONFIG_T> status;
 	static ip_fft::config_t<CONFIG_T> config;
 
@@ -1182,8 +1277,8 @@ template<
 typename CONFIG_T
 >
 void fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V)
 {
@@ -1209,8 +1304,8 @@ template<
 typename CONFIG_T, fft_T2_t tag
 >
 void fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V)
 {
@@ -1237,8 +1332,8 @@ template<
 typename CONFIG_T, fft_T0_t tag
 >
 void fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch)
 {
@@ -1264,8 +1359,8 @@ template<
 typename CONFIG_T
 >
 void fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch)
 {
@@ -1298,8 +1393,8 @@ void fft_copy(hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V, ip_fft::s
 template<
 typename CONFIG_T
 >
-void fft_wrapper(complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+void fft_wrapper(std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::config_t<CONFIG_T> > &config_ch_data_V,
 		hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V, bool &flag) {
 #pragma HLS dataflow
@@ -1315,8 +1410,8 @@ template<
 typename CONFIG_T, fft_T3_t tag
 >
 void fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch)
 {
@@ -1343,8 +1438,8 @@ template<
 typename CONFIG_T, fft_T1_t tag
 >
 void       fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status_data_V,
 		ip_fft::config_t<CONFIG_T> *config_ch_data_V)
 {
@@ -1365,7 +1460,8 @@ void       fft(
 	ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1>,
 	1 << CONFIG_T::max_nfft,
 	1,
-	ip_fft::fixed_point>(xn, xk, status_data_V, config_ch_data_V); // inlined
+	ip_fft::fixed_point,
+	CONFIG_T::super_sample_rate>(xn, xk, status_data_V, config_ch_data_V); // inlined
 #else
 	fft_sim<CONFIG_T>(xn, xk, status_data_V, config_ch_data_V);
 #endif
@@ -1376,8 +1472,8 @@ template<
 typename CONFIG_T
 >
 void   fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
 		((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V)
@@ -1405,7 +1501,8 @@ void   fft(
 	ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1>,
 	1 << CONFIG_T::max_nfft,
 	CONFIG_T::channels,
-	ip_fft::fixed_point
+	ip_fft::fixed_point,
+	CONFIG_T::super_sample_rate
 	>(xn, xk, &status, &config);
 	status_data_V.write(status);
 
@@ -1417,8 +1514,8 @@ template<
 typename CONFIG_T, fft_T2_t tag
 >
 void   fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
 		((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V)
@@ -1446,7 +1543,8 @@ void   fft(
 	ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1>,
 	1 << CONFIG_T::max_nfft,
 	CONFIG_T::channels,
-	ip_fft::fixed_point
+	ip_fft::fixed_point,
+	CONFIG_T::super_sample_rate
 	>(xn, xk, &status, &config);
 	status_data_V.write(status);
 
@@ -1458,8 +1556,8 @@ template<
 typename CONFIG_T
 >
 void   fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
 		((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T>* status,
 		ip_fft::config_t<CONFIG_T>* config_ch)
@@ -1486,7 +1584,8 @@ void   fft(
 	ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1>,
 	1 << CONFIG_T::max_nfft,
 	CONFIG_T::channels,
-	ip_fft::fixed_point
+	ip_fft::fixed_point,
+	CONFIG_T::super_sample_rate
 	>(xn, xk, status, config_ch);
 #endif
 } 
@@ -1496,8 +1595,8 @@ template<
 typename CONFIG_T, fft_T0_t tag
 >
 void   fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
 		((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T>* status,
 		ip_fft::config_t<CONFIG_T>* config_ch)
@@ -1524,7 +1623,8 @@ void   fft(
 	ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1>,
 	1 << CONFIG_T::max_nfft,
 	CONFIG_T::channels,
-	ip_fft::fixed_point
+	ip_fft::fixed_point,
+	CONFIG_T::super_sample_rate
 	>(xn, xk, status, config_ch);
 #endif
 }
@@ -1534,8 +1634,8 @@ template<
 typename CONFIG_T, fft_T1_t tag
 >
 void   fft(
-		complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
-		complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
+		std::complex<ap_fixed<((CONFIG_T::input_width+7)/8)*8, 1> > xn[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
+		std::complex<ap_fixed<((CONFIG_T::output_width+7)/8)*8,
 		((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1> > xk[CONFIG_T::channels][1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T>* status_data_V,
 		ip_fft::config_t<CONFIG_T>* config_ch_data_V)
@@ -1558,7 +1658,8 @@ void   fft(
 	ap_fixed<((CONFIG_T::output_width+7)/8)*8, ((CONFIG_T::output_width+7)/8)*8-CONFIG_T::input_width+1>,
 	1 << CONFIG_T::max_nfft,
 	CONFIG_T::channels,
-	ip_fft::fixed_point
+	ip_fft::fixed_point,
+	CONFIG_T::super_sample_rate
 	>(xn, xk, status_data_V, config_ch_data_V); // inlined
 
 } // End of multi-channels, fixed-point
@@ -1571,10 +1672,10 @@ union U {
 
 template <typename CONFIG_T>
 static void
-data_copy_from_float_to_int64(complex<float> xn[1 << CONFIG_T::max_nfft],
+data_copy_from_float_to_int64(std::complex<float> xn[1 << CONFIG_T::max_nfft],
 		uint64_t xn_cp[1 << CONFIG_T::max_nfft]) {
 	for (unsigned i = 0; i < (1 << CONFIG_T::max_nfft); i++) {
-		complex<float> xn_tmp = xn[i];
+		std::complex<float> xn_tmp = xn[i];
 		U u;
 		u.f = xn_tmp.real();
 		uint64_t xn_cp_tmp = u.i;
@@ -1586,13 +1687,13 @@ data_copy_from_float_to_int64(complex<float> xn[1 << CONFIG_T::max_nfft],
 
 template <typename CONFIG_T>
 static void
-data_copy_from_int64_to_float(complex<float> xk[1 << CONFIG_T::max_nfft],
+data_copy_from_int64_to_float(std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		uint64_t xk_cp[1 << CONFIG_T::max_nfft]) {
 	for (unsigned i = 0; i < (1 << CONFIG_T::max_nfft); i++) {
 		uint64_t xk_cp_tmp = xk_cp[i];
 		U u;
 		u.i = unsigned(xk_cp_tmp);
-		complex<float> xk_tmp;
+		std::complex<float> xk_tmp;
 		xk_tmp.real(u.f);
 		u.i = unsigned(xk_cp_tmp >> 32);
 		xk_tmp.imag(u.f);
@@ -1605,8 +1706,8 @@ data_copy_from_int64_to_float(complex<float> xk[1 << CONFIG_T::max_nfft],
 // 1-channel, floating-point
 template <typename CONFIG_T, char FFT_INPUT_WIDTH, char FFT_OUTPUT_WIDTH,
 int FFT_LENGTH, char FFT_CHANNELS, ip_fft::type FFT_DATA_FORMAT>
-void fft_syn(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft_syn(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
 #pragma HLS inline off
@@ -1616,7 +1717,7 @@ __fpga_ip("Vivado_FFT",
 		//"component_name", "xfft_0",
 		"channels", FFT_CHANNELS,
 		"transform_length", FFT_LENGTH,
-		"implementation_options", CONFIG_T::arch_opt-1,
+		"implementation_options", CONFIG_T::arch_opt,
 		"run_time_configurable_transform_length", CONFIG_T::has_nfft,
 		"data_format", ip_fft::fft_data_format_str[FFT_DATA_FORMAT],
 		"input_width", FFT_INPUT_WIDTH,
@@ -1637,7 +1738,8 @@ __fpga_ip("Vivado_FFT",
 		"number_of_stages_using_block_ram_for_data_and_phase_factors", CONFIG_T::stages_block_ram,
 		"memory_options_hybrid", CONFIG_T::mem_hybrid,
 		"complex_mult_type", CONFIG_T::complex_mult_type,
-		"butterfly_type", CONFIG_T::butterfly_type
+		"butterfly_type", CONFIG_T::butterfly_type,
+		"super_sample_rates", CONFIG_T::super_sample_rate
 );
 
 ip_fft::config_t<CONFIG_T> config_tmp = config_ch_data_V.read();
@@ -1657,8 +1759,8 @@ status_data_V.write(status_tmp);
 
 template <typename CONFIG_T, char FFT_INPUT_WIDTH, char FFT_OUTPUT_WIDTH,
 int FFT_LENGTH, char FFT_CHANNELS, ip_fft::type FFT_DATA_FORMAT>
-void fft_syn(hls::stream<complex<float>> &xn,
-		hls::stream<complex<float>> &xk,
+void fft_syn(hls::stream<std::complex<float>> &xn,
+		hls::stream<std::complex<float>> &xk,
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
 #pragma HLS inline
@@ -1667,7 +1769,7 @@ __fpga_ip("Vivado_FFT",
 		//"component_name", "xfft_0",
 		"channels", FFT_CHANNELS,
 		"transform_length", FFT_LENGTH,
-		"implementation_options", CONFIG_T::arch_opt-1,
+		"implementation_options", CONFIG_T::arch_opt,
 		"run_time_configurable_transform_length", CONFIG_T::has_nfft,
 		"data_format", ip_fft::fft_data_format_str[FFT_DATA_FORMAT],
 		"input_width", FFT_INPUT_WIDTH,
@@ -1688,7 +1790,8 @@ __fpga_ip("Vivado_FFT",
 		"number_of_stages_using_block_ram_for_data_and_phase_factors", CONFIG_T::stages_block_ram,
 		"memory_options_hybrid", CONFIG_T::mem_hybrid,
 		"complex_mult_type", CONFIG_T::complex_mult_type,
-		"butterfly_type", CONFIG_T::butterfly_type
+		"butterfly_type", CONFIG_T::butterfly_type,
+		"super_sample_rates", CONFIG_T::super_sample_rate 
 );
 
 ip_fft::config_t<CONFIG_T> config_tmp = config_ch_data_V.read();
@@ -1705,11 +1808,63 @@ status_tmp.data = config_tmp.getDir();
 status_data_V.write(status_tmp);
 }
 
+
+template <typename CONFIG_T>
+void fft_syn(hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> &xn,
+		hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> &xk,
+		//hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
+		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
+#pragma HLS inline off
+
+__fpga_ip("Vivado_FFT",
+		//"component_name", "xfft_0",
+		"channels", 1,
+		"transform_length", 1 << CONFIG_T::max_nfft,
+		"implementation_options", CONFIG_T::arch_opt,
+		"run_time_configurable_transform_length", CONFIG_T::has_nfft,
+		"data_format", ip_fft::fft_data_format_str[ip_fft::native_floating_point],
+		"input_width", 32,
+		"output_width", 32,
+		"phase_factor_width", CONFIG_T::phase_factor_width,
+		"scaling_options", CONFIG_T::scaling_opt,
+		"rounding_modes", CONFIG_T::rounding_opt,
+		"aclken", "true",
+		"aresetn", "true",
+		"ovflo", CONFIG_T::ovflo,
+		"xk_index", CONFIG_T::xk_index,
+		"throttle_scheme", "nonrealtime",
+		"output_ordering", CONFIG_T::ordering_opt,
+		"cyclic_prefix_insertion", CONFIG_T::cyclic_prefix_insertion,
+		"memory_options_data", CONFIG_T::mem_data,
+		"memory_options_phase_factors", CONFIG_T::mem_phase_factors,
+		"memory_options_reorder", CONFIG_T::mem_reorder,
+		"number_of_stages_using_block_ram_for_data_and_phase_factors", CONFIG_T::stages_block_ram,
+		"memory_options_hybrid", CONFIG_T::mem_hybrid,
+		"complex_mult_type", CONFIG_T::complex_mult_type,
+		"butterfly_type", CONFIG_T::butterfly_type,
+		"super_sample_rates", CONFIG_T::super_sample_rate 
+);
+
+ip_fft::config_t<CONFIG_T> config_tmp = config_ch_data_V.read();
+bool has_scaling_sch = config_tmp.getSch();
+bool has_direction = config_tmp.getDir();
+
+if (has_direction || has_scaling_sch)
+	for (int i = 0; i < (1 << CONFIG_T::max_nfft ); ++i) {
+		xk.write(xn.read());
+	}
+
+//ip_fft::status_t<CONFIG_T> status_tmp;
+//status_tmp.data = config_tmp.getDir();
+//status_data_V.write(status_tmp);
+}
+
+
 template<
 typename CONFIG_T
 >
-void fft_wrapper(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft_wrapper(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::config_t<CONFIG_T> > &config_ch_data_V,
 		hls::stream<ip_fft::status_t<CONFIG_T> > &status_data_V, bool &flag) {
 #pragma HLS dataflow
@@ -1722,8 +1877,8 @@ void fft_wrapper(complex<float> xn[1 << CONFIG_T::max_nfft],
 
 // 1-channel, floating-point
 template <typename CONFIG_T>
-void fft_sim(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft_sim(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch) {
 	fft_core<
@@ -1734,14 +1889,15 @@ void fft_sim(complex<float> xn[1 << CONFIG_T::max_nfft],
 	float,
 	1 << CONFIG_T::max_nfft,
 	1,
-	ip_fft::floating_point
+	ip_fft::floating_point,
+	CONFIG_T::super_sample_rate
 	>(xn, xk, status, config_ch);
 } 
 
 // 1-channel, floating-point, streaming
 template <typename CONFIG_T>
-void fft(hls::stream<complex<float>> &xn,
-		hls::stream<complex<float>> &xk,
+void fft(hls::stream<std::complex<float>> &xn,
+		hls::stream<std::complex<float>> &xk,
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
 #pragma HLS inline off
@@ -1749,8 +1905,8 @@ void fft(hls::stream<complex<float>> &xn,
 	fft_syn<CONFIG_T, 32, 32, 1 << CONFIG_T::max_nfft, 1,
 			ip_fft::floating_point>(xn, xk, status_data_V, config_ch_data_V); // inlined
 #else
-	complex<float> xn_a[1 << CONFIG_T::max_nfft];
-	complex<float> xk_a[1 << CONFIG_T::max_nfft];
+	std::complex<float> xn_a[1 << CONFIG_T::max_nfft];
+	std::complex<float> xk_a[1 << CONFIG_T::max_nfft];
 	ip_fft::status_t<CONFIG_T> status;
 	ip_fft::config_t<CONFIG_T> config;
 
@@ -1767,8 +1923,8 @@ void fft(hls::stream<complex<float>> &xn,
 
 // 1-channel, floating-point, streaming, non-blocking for simulation
 template <typename CONFIG_T, fft_T2_t tag>
-void fft(hls::stream<complex<float>> &xn,
-		hls::stream<complex<float>> &xk,
+void fft(hls::stream<std::complex<float>> &xn,
+		hls::stream<std::complex<float>> &xk,
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
 #pragma HLS inline off
@@ -1776,8 +1932,8 @@ void fft(hls::stream<complex<float>> &xn,
 	fft_syn<CONFIG_T, 32, 32, 1 << CONFIG_T::max_nfft, 1,
 			ip_fft::floating_point>(xn, xk, status_data_V, config_ch_data_V); // inlined
 #else
-	complex<float> xn_a[1 << CONFIG_T::max_nfft];
-	complex<float> xk_a[1 << CONFIG_T::max_nfft];
+	std::complex<float> xn_a[1 << CONFIG_T::max_nfft];
+	std::complex<float> xk_a[1 << CONFIG_T::max_nfft];
 	ip_fft::status_t<CONFIG_T> status;
 	static ip_fft::config_t<CONFIG_T> config;
 
@@ -1792,22 +1948,125 @@ void fft(hls::stream<complex<float>> &xn,
 #endif
 } 
 
-// 1-channel, floating-point, 1D arrays + streams
-template <typename CONFIG_T>
-void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+
+template<typename CONFIG_T>
+void fft_stream_assemble(hls::stream<std::complex<float>> (&xn_in)[CONFIG_T::super_sample_rate],
+		hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> &xn) {
+#pragma HLS inline off
+	for(int i = 0; i < (1 << (CONFIG_T::max_nfft)) / CONFIG_T::super_sample_rate; i++){
+		#pragma HLS PIPELINE II=1
+		ip_fft::data_item<CONFIG_T::super_sample_rate> din;
+		for(int j = 0; j < CONFIG_T::super_sample_rate; j++){
+			#pragma HLS UNROLL
+			din.data[j] = xn_in[j].read();
+		}
+		xn.write(din);
+	}
+}
+
+
+template<typename CONFIG_T>
+void fft_stream_dissemble(hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> &xk,
+		hls::stream<std::complex<float>> (&xk_out)[CONFIG_T::super_sample_rate]) {
+#pragma HLS inline off
+	for(int i = 0; i < (1 << (CONFIG_T::max_nfft)) / CONFIG_T::super_sample_rate; i++){
+		#pragma HLS PIPELINE II=1
+		ip_fft::data_item<CONFIG_T::super_sample_rate> dout = xk.read();
+		for(int j = 0; j < CONFIG_T::super_sample_rate; j++){
+			#pragma HLS UNROLL
+			xk_out[j].write(dout.data[j]);
+		}
+	}
+}
+
+
+// 1-channe, native floating point with ssr > 1
+template<typename CONFIG_T>
+void fft(hls::stream<std::complex<float>> (&xn_in)[CONFIG_T::super_sample_rate],
+		hls::stream<std::complex<float>> (&xk_out)[CONFIG_T::super_sample_rate],
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
 
 #ifdef __SYNTHESIS__
-#pragma HLS inline
-#pragma HLS aggregate variable=xn
-#pragma HLS aggregate variable=xk
-#pragma HLS stream variable=xn
-#pragma HLS stream variable=xk
+#pragma HLS inline off
+#pragma HLS DATAFLOW
 
-	fft_syn<CONFIG_T, 32, 32, 1 << CONFIG_T::max_nfft, 1,
-			ip_fft::floating_point>(xn, xk, status_data_V, config_ch_data_V); // not inlined
+	hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> xn;
+	hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> xk;
+
+	fft_stream_assemble<CONFIG_T>(xn_in, xn);
+
+	fft_syn<CONFIG_T>(xn,xk,config_ch_data_V);
+	
+	fft_stream_dissemble<CONFIG_T>(xk, xk_out);
+
+	ip_fft::status_t<CONFIG_T> status_tmp;
+	status_tmp.data = 0;
+	status_data_V.write(status_tmp);
+#else
+
+	std::complex<float> xn_a[1 << CONFIG_T::max_nfft];
+	std::complex<float> xk_a[1 << CONFIG_T::max_nfft];
+	ip_fft::status_t<CONFIG_T> status;
+	ip_fft::config_t<CONFIG_T> config;
+
+	config = config_ch_data_V.read();
+	unsigned int bound = CONFIG_T::has_nfft ? config.getNfft() : CONFIG_T::max_nfft;	
+	for (unsigned int i = 0; i < 1 << bound; i++){
+		xn_a[i] = xn_in[i % CONFIG_T::super_sample_rate].read();
+	}
+	fft_sim<CONFIG_T>(xn_a, xk_a, &status, &config);
+	for (unsigned int i = 0; i < 1 << bound; i++)
+		xk_out[i % CONFIG_T::super_sample_rate].write(xk_a[i]);
+	status_data_V.write(status);
+#endif
+}
+
+
+template<typename CONFIG_T>
+void fft_array_assemble(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> &xn_buf) {
+#pragma HLS inline off
+	for(int i = 0; i < (1 << (CONFIG_T::max_nfft)) / CONFIG_T::super_sample_rate; i++){
+		#pragma HLS PIPELINE II=1
+		ip_fft::data_item<CONFIG_T::super_sample_rate> din;
+		for(int j = 0; j < CONFIG_T::super_sample_rate; j++){
+			#pragma HLS UNROLL
+			din.data[j] = xn[i*CONFIG_T::super_sample_rate + j];
+		}
+		xn_buf.write(din);
+	}
+}
+
+
+template<typename CONFIG_T>
+void fft_array_dissemble(hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> &xk_buf,
+		std::complex<float> xk[1 << CONFIG_T::max_nfft]) {
+#pragma HLS inline off
+	for(int i = 0; i < (1 << (CONFIG_T::max_nfft)) / CONFIG_T::super_sample_rate; i++){
+		#pragma HLS PIPELINE II=1
+		ip_fft::data_item<CONFIG_T::super_sample_rate> dout = xk_buf.read();
+		for(int j = 0; j < CONFIG_T::super_sample_rate; j++){
+			#pragma HLS UNROLL
+			xk[i*CONFIG_T::super_sample_rate + j] = dout.data[j];
+		}
+	}	
+}
+
+
+// 1-channel, floating-point, 1D arrays + streams
+template <typename CONFIG_T, std::enable_if_t<CONFIG_T::super_sample_rate == 1, int> = 0>
+void fft(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
+		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
+		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
+#ifdef __SYNTHESIS__
+	#pragma HLS inline
+	#pragma HLS aggregate variable=xn
+	#pragma HLS aggregate variable=xk
+	#pragma HLS stream variable=xn
+	#pragma HLS stream variable=xk
+		fft_syn<CONFIG_T, 32, 32, 1 << CONFIG_T::max_nfft, 1,ip_fft::floating_point>(xn, xk, status_data_V, config_ch_data_V); // not inlined
 #else
 	ip_fft::status_t<CONFIG_T> status;
 	ip_fft::config_t<CONFIG_T> config;
@@ -1818,10 +2077,44 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 #endif
 } 
 
+
+template <typename CONFIG_T, std::enable_if_t<CONFIG_T::super_sample_rate != 1, int> = 0>
+void fft(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
+		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
+		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
+#ifdef __SYNTHESIS__
+
+	#pragma HLS inline off
+	#pragma HLS DATAFLOW
+
+	hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> xn_buf;
+	hls::stream<ip_fft::data_item<CONFIG_T::super_sample_rate>> xk_buf;
+
+	fft_array_assemble<CONFIG_T>(xn, xn_buf);
+
+	fft_syn<CONFIG_T>(xn_buf,xk_buf,config_ch_data_V);
+	
+	fft_array_dissemble<CONFIG_T>(xk_buf, xk);
+
+	ip_fft::status_t<CONFIG_T> status_tmp;
+	status_tmp.data = 0;
+	status_data_V.write(status_tmp);	
+#else
+	ip_fft::status_t<CONFIG_T> status;
+	ip_fft::config_t<CONFIG_T> config;
+
+	config = config_ch_data_V.read();
+	fft_sim<CONFIG_T>(xn, xk, &status, &config);
+	status_data_V.write(status);
+#endif
+} 
+
+
 // 1-channel, floating-point, 1D arrays + streams, non-blocking for simulation
 template <typename CONFIG_T, fft_T2_t tag>
-void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		hls::stream<ip_fft::status_t<CONFIG_T>> &status_data_V,
 		hls::stream<ip_fft::config_t<CONFIG_T>> &config_ch_data_V) {
 
@@ -1831,7 +2124,6 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 #pragma HLS aggregate variable=xk
 #pragma HLS stream variable=xn
 #pragma HLS stream variable=xk
-
 	fft_syn<CONFIG_T, 32, 32, 1 << CONFIG_T::max_nfft, 1,
 			ip_fft::floating_point>(xn, xk, status_data_V, config_ch_data_V); // not inlined
 #else
@@ -1844,10 +2136,11 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 #endif
 } 
 
+
 // 1-channel, floating-point, 1D arrays + scalars, not inlined
 template <typename CONFIG_T>
-void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch) {
 
@@ -1857,7 +2150,6 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 #pragma HLS aggregate variable=xk
 #pragma HLS stream variable=xn
 #pragma HLS stream variable=xk
-
 	hls::stream<ip_fft::config_t<CONFIG_T>, 2> config_ch_data_V;
 	hls::stream<ip_fft::status_t<CONFIG_T>, 2> status_data_V;
 	config_ch_data_V.write(*config_ch);
@@ -1872,8 +2164,8 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 
 // 1-channel, floating-point, 1D arrays + scalars, inlined
 template <typename CONFIG_T, fft_T0_t tag>
-void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch) {
 
@@ -1883,7 +2175,6 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 #pragma HLS aggregate variable=xk
 #pragma HLS stream variable=xn
 #pragma HLS stream variable=xk
-
 	hls::stream<ip_fft::config_t<CONFIG_T>, 2> config_ch_data_V;
 	hls::stream<ip_fft::status_t<CONFIG_T>, 2> status_data_V;
 	config_ch_data_V.write(*config_ch);
@@ -1898,8 +2189,8 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 
 // 1-channel, floating-point, 1D arrays + scalar-to-stream, not inlined
 template <typename CONFIG_T, fft_T1_t tag>
-void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status_data_V,
 		ip_fft::config_t<CONFIG_T> *config_ch_data_V) {
 
@@ -1909,11 +2200,11 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 #pragma HLS aggregate variable=xk
 #pragma HLS stream variable=xn
 #pragma HLS stream variable=xk
+
 #pragma HLS stream variable=status_data_V
 #pragma HLS stream variable=config_ch_data_V
 
-	fft_core<CONFIG_T, 32, 32, float, float, 1 << CONFIG_T::max_nfft, 1, ip_fft::floating_point>(xn, xk, status_data_V, config_ch_data_V); // inlined
-
+	fft_core<CONFIG_T, 32, 32, float, float, 1 << CONFIG_T::max_nfft, 1, ip_fft::floating_point, CONFIG_T::super_sample_rate>(xn, xk, status_data_V, config_ch_data_V); // inlined
 #else
 	fft_sim<CONFIG_T>(xn, xk, status_data_V, config_ch_data_V);
 #endif
@@ -1921,8 +2212,8 @@ void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
 
 // 1-channel, floating-point, arrays + scalars, with extra wrapper 
 template <typename CONFIG_T, fft_T3_t tag>
-void fft(complex<float> xn[1 << CONFIG_T::max_nfft],
-		complex<float> xk[1 << CONFIG_T::max_nfft],
+void fft(std::complex<float> xn[1 << CONFIG_T::max_nfft],
+		std::complex<float> xk[1 << CONFIG_T::max_nfft],
 		ip_fft::status_t<CONFIG_T> *status,
 		ip_fft::config_t<CONFIG_T> *config_ch) {
 
@@ -1974,6 +2265,38 @@ void get_data(unsigned log2_of_length,
 template<unsigned int log2_of_max_length,
          typename config_t,
          typename data_out_t>
+void get_data(unsigned log2_of_length, 
+              std::complex<data_out_t>  in[1 << log2_of_max_length], 
+              hls::stream<std::complex<data_out_t>>&  out) {
+        unsigned length = 1 << log2_of_length;
+        assert(log2_of_length <= log2_of_max_length);
+        assert(length <= 1 << log2_of_max_length);
+        assert(length>0);
+        for (int i=0; i<length; i++) {
+#pragma HLS pipeline II=1 rewind style=flp
+                std::complex<data_out_t> tmp = in[i];
+                out.write(tmp);
+        }
+}
+
+template<unsigned int log2_of_max_length,
+         typename config_t,
+         typename data_out_t>
+void outputdatamover(unsigned int log2_of_length,
+                     std::complex<data_out_t>  in[1 << log2_of_max_length], 
+                     hls::stream<std::complex<data_out_t>>&  out,
+                     hls::stream<hls::ip_fft::status_t<config_t>>  &status_strm,
+                     bool& ovflo) {
+#pragma HLS dataflow
+#pragma HLS inline
+
+        get_status<config_t>(status_strm, ovflo);
+        get_data<log2_of_max_length, config_t, data_out_t>(log2_of_length, in, out);
+}
+
+template<unsigned int log2_of_max_length,
+         typename config_t,
+         typename data_out_t>
 void outputdatamover(unsigned int log2_of_length,
                      std::complex<data_out_t>  in[1 << log2_of_max_length], 
                      std::complex<data_out_t>  out[1 << log2_of_max_length],
@@ -1988,20 +2311,78 @@ void outputdatamover(unsigned int log2_of_length,
 
 template<typename config_t>
 void set_config(bool direction, 
+                unsigned scaling_sch,
+                unsigned cyclic_prefix_length,
                 hls::ip_fft::config_t<config_t> &config) {
         hls::ip_fft::config_t<config_t> config_tmp;
         config_tmp.setDir(direction);
+        config_tmp.setSch(scaling_sch);
+        //config_tmp.setCpLen(cyclic_prefix_length);
         config = config_tmp;
 }
 
 template<typename config_t>
 void set_config(bool direction, 
                 unsigned int log2_of_max_length,
+                unsigned scaling_sch,
+                unsigned cyclic_prefix_length,
                 hls::ip_fft::config_t<config_t> &config) {
         hls::ip_fft::config_t<config_t> config_tmp;
         config_tmp.setDir(direction);
+        config_tmp.setSch(scaling_sch);
+        //config_tmp.setCpLen(cyclic_prefix_length);
         config_tmp.setNfft(log2_of_max_length);
         config = config_tmp;
+}
+
+template<unsigned int log2_of_max_length,
+         typename config_t,
+         typename data_in_t>
+void set_data(unsigned int log2_of_length,
+              hls::stream<std::complex<data_in_t>>& in,
+              std::complex<data_in_t>  out[1 << log2_of_max_length]) {
+        assert(log2_of_length <= log2_of_max_length);
+        unsigned length = 1 << log2_of_length;
+        assert(length <= 1 << log2_of_max_length);
+        assert(length>0);
+        
+        for (int i=0; i<length; i++) {
+#pragma HLS pipeline II=1 rewind style=flp
+            out[i] = in.read();
+        }
+}
+
+template<unsigned int log2_of_max_length,
+         typename config_t,
+         typename data_in_t>
+void inputdatamover(hls::stream<std::complex<data_in_t>>&  in,
+                    std::complex<data_in_t>  out[1 << log2_of_max_length],
+                    bool direction,
+                    unsigned scaling_sch,
+                    unsigned cyclic_prefix_length,
+                    hls::ip_fft::config_t<config_t> &config) {
+#pragma HLS dataflow
+#pragma HLS inline
+
+    set_config<config_t>(direction, scaling_sch, cyclic_prefix_length, config);
+	set_data<log2_of_max_length, config_t, data_in_t>(log2_of_max_length, in, out);
+}
+
+template<unsigned int log2_of_max_length,
+         typename config_t,
+         typename data_in_t>
+void inputdatamover(unsigned int log2_of_length,
+                    hls::stream<std::complex<data_in_t>>&  in,
+                    std::complex<data_in_t>  out[1 << log2_of_max_length],
+                    bool direction,
+                    unsigned scaling_sch,
+                    unsigned cyclic_prefix_length,
+                    hls::ip_fft::config_t<config_t> &config) {
+#pragma HLS dataflow
+#pragma HLS inline
+
+        set_config<config_t>(direction, log2_of_length, scaling_sch, cyclic_prefix_length, config);
+        set_data<log2_of_max_length, config_t, data_in_t>(log2_of_length, in, out);
 }
 
 template<unsigned int log2_of_max_length,
@@ -2027,11 +2408,14 @@ template<unsigned int log2_of_max_length,
 void inputdatamover(std::complex<data_in_t>  in[1 << log2_of_max_length], 
                     std::complex<data_in_t>  out[1 << log2_of_max_length],
                     bool direction,
+                    unsigned scaling_sch,
+                    unsigned cyclic_prefix_length,
                     hls::ip_fft::config_t<config_t> &config) {
 #pragma HLS dataflow
 #pragma HLS inline
 
-        set_config<config_t>(direction, config);
+    set_config<config_t>(direction, scaling_sch, cyclic_prefix_length, config);
+	set_data<log2_of_max_length, config_t, data_in_t>(log2_of_max_length, in, out);
 }
 
 template<unsigned int log2_of_max_length,
@@ -2041,11 +2425,13 @@ void inputdatamover(unsigned int log2_of_length,
                     std::complex<data_in_t>  in[1 << log2_of_max_length], 
                     std::complex<data_in_t>  out[1 << log2_of_max_length],
                     bool direction,
+                    unsigned scaling_sch,
+                    unsigned cyclic_prefix_length,
                     hls::ip_fft::config_t<config_t> &config) {
 #pragma HLS dataflow
 #pragma HLS inline
 
-        set_config<config_t>(direction, log2_of_length, config);
+        set_config<config_t>(direction, log2_of_length, scaling_sch, cyclic_prefix_length, config);
         set_data<log2_of_max_length, config_t, data_in_t>(log2_of_length, in, out);
 }
 
@@ -2083,12 +2469,12 @@ template<unsigned int log2_of_max_length,
          enum hls::ip_fft::mem memory_options_reorder,
          bool memory_options_hybrid,
          enum hls::ip_fft::opt cplx_mult_type,
-         enum hls::ip_fft::opt butterfly_impl>
+         enum hls::ip_fft::opt butterfly_impl,
+         enum hls::ip_fft::type data_type = hls::ip_fft::fixed_point>
 struct fft_config_t : hls::ip_fft::params_t {
     static const unsigned input_width = in_width;
     static const unsigned output_width = out_width;
     static const unsigned status_width = 8;
-    static const unsigned config_width = 16;
     static const unsigned max_nfft = log2_of_max_length;
     static const bool has_nfft = run_time_configurable_transform_length;
     static const unsigned channels = 1;
@@ -2106,7 +2492,13 @@ struct fft_config_t : hls::ip_fft::params_t {
     static const unsigned complex_mult_type = cplx_mult_type;
     static const unsigned butterfly_type = butterfly_impl;
     static const bool xk_index = false;
-    static const bool cyclic_prefix_insertion = cyclic_prefix_ins;
+    static const unsigned nfft_bits = has_nfft ? 8 : 0; // Padding to 8 bits
+    static const unsigned cp_len_bits = cyclic_prefix_ins ? (((max_nfft + 7) >> 3) << 3) : 0; // Padding
+    static const unsigned tmp_bits = (arch_opt == unsigned(ip_fft::pipelined_streaming_io) || arch_opt == unsigned(ip_fft::radix_4_burst_io)) ? ((max_nfft+1)>>1) * 2 : 2 * max_nfft;
+    static const bool need_scaling = (data_type == ip_fft::floating_point) ? true : (scaling_opt == unsigned(ip_fft::scaled));
+    static const unsigned sch_bits = need_scaling ? tmp_bits : 0;
+    static const unsigned config_bits = (sch_bits + channels) * channels + cp_len_bits + nfft_bits;
+    static const unsigned config_width = ((config_bits + 7) >> 3) << 3; // padding
 };
 
 }; // namespace ip_fft
@@ -2136,9 +2528,11 @@ template<unsigned int log2_of_max_length = 10,
 void vivado_var_len_fft(
     bool direction,
     unsigned int log2_of_length,
-    std::complex<data_in_t> in[1 << log2_of_max_length],
-    std::complex<data_out_t> out[1 << log2_of_max_length],
-    bool& ovflo)
+    hls::stream<std::complex<data_in_t>>&in,
+    hls::stream<std::complex<data_out_t>>&out,
+    bool& ovflo,
+    unsigned scaling_sch = 0,
+    unsigned cyclic_prefix_length = 0)
 {
 #pragma HLS dataflow
 
@@ -2159,18 +2553,141 @@ void vivado_var_len_fft(
          complex_mult_type,
          butterfly_type> fft_config_t;
 
-    std::complex<data_in_t> xn[1 << log2_of_max_length];
-#pragma HLS STREAM variable=xn depth=4
+    std::complex<data_in_t> xn[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xn depth=8
 
-    std::complex<data_out_t> xk[1 << log2_of_max_length];
-#pragma HLS STREAM variable=xk depth=4
+    std::complex<data_out_t> xk[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xk depth=8
+
+    hls::ip_fft::config_t<fft_config_t>  config;
+#pragma HLS STREAM variable=config type=pipo
+
+    hls::stream<hls::ip_fft::status_t<fft_config_t>> status_strm;
+#pragma HLS STREAM variable=status_strm depth=8
+   
+    hls::ip_fft::inputdatamover<log2_of_max_length, fft_config_t, data_in_t>(log2_of_length, in, xn, direction, scaling_sch, cyclic_prefix_length, config);
+    hls::ip_fft::fft_call<log2_of_max_length, fft_config_t, data_in_t, data_out_t>(xn, xk, config, status_strm);
+    hls::ip_fft::outputdatamover<log2_of_max_length, fft_config_t, data_out_t>(log2_of_length, xk, out, status_strm, ovflo);
+}
+
+template<unsigned int log2_of_max_length = 10, 
+         unsigned int input_width = 16,
+         unsigned int output_width = 16,
+         unsigned int phase_factor_width = 16,
+         enum hls::ip_fft::arch implementation_options = hls::ip_fft::pipelined_streaming_io,
+         enum hls::ip_fft::scaling scaling_options = hls::ip_fft::scaled,
+         enum hls::ip_fft::rounding rounding_modes = hls::ip_fft::truncation, 
+         enum hls::ip_fft::ordering output_ordering = hls::ip_fft::bit_reversed_order,
+         bool cyclic_prefix_insertion = false,
+         enum hls::ip_fft::mem memory_options_data = hls::ip_fft::block_ram,
+         enum hls::ip_fft::mem memory_options_phase_factors = hls::ip_fft::block_ram,
+         enum hls::ip_fft::mem memory_options_reorder = hls::ip_fft::block_ram,
+         bool memory_options_hybrid = false,
+         enum hls::ip_fft::opt complex_mult_type = hls::ip_fft::use_mults_resources,
+         enum hls::ip_fft::opt butterfly_type = hls::ip_fft::use_luts,
+         typename data_in_t,
+         typename data_out_t>
+void vivado_fix_len_fft(
+    bool direction,
+    hls::stream<std::complex<data_in_t>>& in,
+    hls::stream<std::complex<data_out_t>>& out,
+    bool& ovflo,
+    unsigned scaling_sch = 0,
+    unsigned cyclic_prefix_length = 0)
+{
+#pragma HLS dataflow
+
+    typedef hls::ip_fft::fft_config_t<log2_of_max_length, 
+         implementation_options, 
+         false, // run_time_configurable_transform_length
+         input_width, 
+         output_width, 
+         phase_factor_width,
+         scaling_options,
+         rounding_modes, 
+         output_ordering,
+         cyclic_prefix_insertion,
+         memory_options_data,
+         memory_options_phase_factors,
+         memory_options_reorder,
+         memory_options_hybrid,
+         complex_mult_type,
+         butterfly_type> fft_config_t;
+
+    std::complex<data_in_t> xn[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xn depth=8
+
+    std::complex<data_out_t> xk[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xk depth=8
 
     hls::ip_fft::config_t<fft_config_t>  config;
 #pragma HLS STREAM variable=config type=pipo
 
     hls::stream<hls::ip_fft::status_t<fft_config_t>> status_strm;
    
-    hls::ip_fft::inputdatamover<log2_of_max_length, fft_config_t, data_in_t>(log2_of_length, in, xn, direction, config);
+    hls::ip_fft::inputdatamover<log2_of_max_length, fft_config_t, data_in_t>(in, xn, direction, scaling_sch, cyclic_prefix_length, config);
+    hls::ip_fft::fft_call<log2_of_max_length, fft_config_t, data_in_t, data_out_t>(xn, xk, config, status_strm);
+    hls::ip_fft::outputdatamover<log2_of_max_length, fft_config_t, data_out_t>(log2_of_max_length, xk, out, status_strm, ovflo);
+}
+
+template<unsigned int log2_of_max_length = 10, 
+         unsigned int input_width = 16,
+         unsigned int output_width = 16,
+         unsigned int phase_factor_width = 16,
+         enum hls::ip_fft::arch implementation_options = hls::ip_fft::pipelined_streaming_io,
+         enum hls::ip_fft::scaling scaling_options = hls::ip_fft::scaled,
+         enum hls::ip_fft::rounding rounding_modes = hls::ip_fft::truncation, 
+         enum hls::ip_fft::ordering output_ordering = hls::ip_fft::bit_reversed_order,
+         bool cyclic_prefix_insertion = false,
+         enum hls::ip_fft::mem memory_options_data = hls::ip_fft::block_ram,
+         enum hls::ip_fft::mem memory_options_phase_factors = hls::ip_fft::block_ram,
+         enum hls::ip_fft::mem memory_options_reorder = hls::ip_fft::block_ram,
+         bool memory_options_hybrid = false,
+         enum hls::ip_fft::opt complex_mult_type = hls::ip_fft::use_mults_resources,
+         enum hls::ip_fft::opt butterfly_type = hls::ip_fft::use_luts,
+         typename data_in_t,
+         typename data_out_t>
+void vivado_var_len_fft(
+    bool direction,
+    unsigned int log2_of_length,
+    std::complex<data_in_t> in[1 << log2_of_max_length],
+    std::complex<data_out_t> out[1 << log2_of_max_length],
+    bool& ovflo,
+    unsigned scaling_sch = 0,
+    unsigned cyclic_prefix_length = 0)
+{
+#pragma HLS dataflow
+
+    typedef hls::ip_fft::fft_config_t<log2_of_max_length, 
+         implementation_options, 
+         true, // run_time_configurable_transform_length
+         input_width, 
+         output_width, 
+         phase_factor_width,
+         scaling_options,
+         rounding_modes, 
+         output_ordering,
+         cyclic_prefix_insertion,
+         memory_options_data,
+         memory_options_phase_factors,
+         memory_options_reorder,
+         memory_options_hybrid,
+         complex_mult_type,
+         butterfly_type> fft_config_t;
+
+    std::complex<data_in_t> xn[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xn depth=8
+
+    std::complex<data_out_t> xk[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xk depth=8
+
+    hls::ip_fft::config_t<fft_config_t>  config;
+#pragma HLS STREAM variable=config type=pipo
+
+    hls::stream<hls::ip_fft::status_t<fft_config_t>> status_strm;
+#pragma HLS STREAM variable=status_strm depth=8
+   
+    hls::ip_fft::inputdatamover<log2_of_max_length, fft_config_t, data_in_t>(log2_of_length, in, xn, direction, scaling_sch, cyclic_prefix_length, config);
     hls::ip_fft::fft_call<log2_of_max_length, fft_config_t, data_in_t, data_out_t>(xn, xk, config, status_strm);
     hls::ip_fft::outputdatamover<log2_of_max_length, fft_config_t, data_out_t>(log2_of_length, xk, out, status_strm, ovflo);
 }
@@ -2196,7 +2713,9 @@ void vivado_fix_len_fft(
     bool direction,
     std::complex<data_in_t> in[1 << log2_of_max_length],
     std::complex<data_out_t> out[1 << log2_of_max_length],
-    bool& ovflo)
+    bool& ovflo,
+    unsigned scaling_sch = 0,
+    unsigned cyclic_prefix_length = 0)
 {
 #pragma HLS dataflow
 
@@ -2217,18 +2736,18 @@ void vivado_fix_len_fft(
          complex_mult_type,
          butterfly_type> fft_config_t;
 
-    std::complex<data_in_t> xn[1 << log2_of_max_length];
-#pragma HLS STREAM variable=xn depth=4
+    std::complex<data_in_t> xn[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xn depth=8
 
-    std::complex<data_out_t> xk[1 << log2_of_max_length];
-#pragma HLS STREAM variable=xk depth=4
+    std::complex<data_out_t> xk[1 << log2_of_max_length] __attribute__((no_ctor));
+#pragma HLS STREAM variable=xk depth=8
 
     hls::ip_fft::config_t<fft_config_t>  config;
 #pragma HLS STREAM variable=config type=pipo
 
     hls::stream<hls::ip_fft::status_t<fft_config_t>> status_strm;
    
-    hls::ip_fft::inputdatamover<log2_of_max_length, fft_config_t, data_in_t>(in, xn, direction, config);
+    hls::ip_fft::inputdatamover<log2_of_max_length, fft_config_t, data_in_t>(in, xn, direction, scaling_sch, cyclic_prefix_length, config);
     hls::ip_fft::fft_call<log2_of_max_length, fft_config_t, data_in_t, data_out_t>(xn, xk, config, status_strm);
     hls::ip_fft::outputdatamover<log2_of_max_length, fft_config_t, data_out_t>(log2_of_max_length, xk, out, status_strm, ovflo);
 }

@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 #ifndef __AP_FLOAT_H__
@@ -29,6 +29,10 @@ class ap_float;
 using ap_float_half = ap_float<16, 5>;
 using ap_float_single = ap_float<32, 8>;
 using ap_float_double = ap_float<64, 11>;
+
+// Shorthand for AI related types
+using ap_float_bf16 = ap_float<16, 8>;
+using ap_float_tf32 = ap_float<19, 8>;
 
 namespace {
 // Log base 2 (ceiling) helper function
@@ -89,7 +93,7 @@ class ap_float {
       } else {
         // NaN become Canonical QNaN
         exponent_ref() = exponent_infinity();
-        mantissa_ref() = -1;
+        mantissa_ref() = mantissa_quiet_mask();
       }
     } else {
       // Normals are assumed to fit in the range (rounding must be done before)
@@ -176,26 +180,26 @@ public:
   ap_float& operator=(const ap_float &) = default;
 
   // Returns a reference to the sign bit
-  INLINE NODEBUG sign_ref_t sign_ref() noexcept { return bits[W-1]; }
-  INLINE NODEBUG bool sign_ref() const noexcept { return bits[W-1]; }
+  AP_INLINE AP_NODEBUG sign_ref_t sign_ref() noexcept { return bits[W-1]; }
+  AP_INLINE AP_NODEBUG bool sign_ref() const noexcept { return bits[W-1]; }
 
   // Returns a reference to the exponent bits range (biased value)
-  INLINE NODEBUG exponent_ref_t exponent_ref() noexcept { return bits.range(W-2, W-E-1); }
-  INLINE NODEBUG const exponent_ref_t exponent_ref() const noexcept { return bits.range(W-2, W-E-1); }
+  AP_INLINE AP_NODEBUG exponent_ref_t exponent_ref() noexcept { return bits.range(W-2, W-E-1); }
+  AP_INLINE AP_NODEBUG const exponent_ref_t exponent_ref() const noexcept { return bits.range(W-2, W-E-1); }
 
   // Returns a reference to the mantissa bits range (doesn't include sign)
-  INLINE NODEBUG mantissa_ref_t mantissa_ref() noexcept { return bits.range(W-E-2, 0); }
-  INLINE NODEBUG const mantissa_ref_t mantissa_ref() const noexcept { return bits.range(W-E-2, 0); }
+  AP_INLINE AP_NODEBUG mantissa_ref_t mantissa_ref() noexcept { return bits.range(W-E-2, 0); }
+  AP_INLINE AP_NODEBUG const mantissa_ref_t mantissa_ref() const noexcept { return bits.range(W-E-2, 0); }
 
   // Bits and pieces constructor (biased exponent)
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(sign_t s, exponent_t e, mantissa_t m) noexcept {
     sign_ref() = s;
     exponent_ref() = e;
     mantissa_ref() = m;
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(sign_ref_t s, exponent_ref_t e, mantissa_ref_t m) noexcept {
     sign_ref() = s;
     exponent_ref() = e;
@@ -203,65 +207,65 @@ public:
   }
 
   // Exponent special values
-  INLINE NODEBUG static constexpr exponent_t exponent_denorm() noexcept { return 0; }
-  INLINE NODEBUG static constexpr exponent_t exponent_min() noexcept { return 1; }
-  INLINE NODEBUG static constexpr exponent_t exponent_max() noexcept { return -2; }
-  INLINE NODEBUG static constexpr exponent_t exponent_infinity() noexcept { return -1; }
+  AP_INLINE AP_NODEBUG static constexpr exponent_t exponent_denorm() noexcept { return 0; }
+  AP_INLINE AP_NODEBUG static constexpr exponent_t exponent_min() noexcept { return 1; }
+  AP_INLINE AP_NODEBUG static constexpr exponent_t exponent_max() noexcept { return -2; }
+  AP_INLINE AP_NODEBUG static constexpr exponent_t exponent_infinity() noexcept { return -1; }
 
   // Mantissa special values
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr mantissa_t mantissa_quiet_mask() noexcept {
     return ((mantissa_t)-1) << (M-2);
   }
 
   // Exponent bias
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr int exponent_bias() noexcept {
     return (exponent_t(1) << (E-1)) - 1;
   }
 
   // Special values
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float lowest() noexcept {
     return ap_float(true, exponent_max(), -1);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float zero() noexcept {
     return ap_float(false, exponent_denorm(), 0);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float min_denorm() noexcept {
     return ap_float(false, exponent_denorm(), 1);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float min() noexcept {
     return ap_float(false, exponent_min(), 0);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float epsilon() noexcept {
     return ap_float(false, exponent_bias() - (M-1), 0);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float one() noexcept {
     return ap_float(false, exponent_bias(), 0);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float one_half() noexcept {
     return ap_float(false, exponent_bias() - 1, 0);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float max() noexcept {
     return ap_float(false, exponent_max(), -1);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float infinity() noexcept {
     return ap_float(false, exponent_infinity(), 0);
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float quiet_NaN() noexcept {
     return ap_float(false, exponent_infinity(), mantissa_quiet_mask());
   }
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float signaling_NaN() noexcept {
     return ap_float(false, exponent_infinity(), mantissa_quiet_mask() >> 1);
   }
@@ -271,7 +275,7 @@ public:
   friend class ap_float;
 
   // Get exponent value (unbiased value, only valid for normals)
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   int get_unbiased_exponent() const noexcept {
     int biased = exponent_ref();
     assert(biased > exponent_denorm() && "Unbiased exponent on denormals is unsupported");
@@ -280,7 +284,7 @@ public:
   }
 
   // Set exponent value (unbiased value, only valid for normals)
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   void set_unbiased_exponent(int e) noexcept {
     int biased = e + exponent_bias();
     assert(biased > exponent_denorm() && "Unbiased exponent on denormals is unsupported");
@@ -295,7 +299,7 @@ public:
 
   // Conversion from native floating point 
   template<typename Enabled = void>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(const half &h, std::enable_if_t<is_half, Enabled>* = 0) noexcept {
 #ifndef __SYNTHESIS__
     xip_fpo_t val;
@@ -309,12 +313,12 @@ public:
   }
 
   template<typename Enabled = void>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(const half &h, std::enable_if_t<!is_half, Enabled>* = 0) noexcept
       : ap_float(ap_float_half(h)) {}
 
   template<typename Enabled = void>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(const float &f, std::enable_if_t<is_single, Enabled>* = 0) noexcept {
 #ifndef __SYNTHESIS__
     xip_fpo_t val;
@@ -328,12 +332,12 @@ public:
   }
   
   template<typename Enabled = void>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(const float &f, std::enable_if_t<!is_single, Enabled>* = 0) noexcept
       : ap_float(ap_float_single(f)) {}
 
   template<typename Enabled = void>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(const double &d, std::enable_if_t<is_double, Enabled>* = 0) noexcept {
 #ifndef __SYNTHESIS__
     xip_fpo_t val;
@@ -347,65 +351,65 @@ public:
   }
   
   template<typename Enabled = void>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float(const double &d, std::enable_if_t<!is_double, Enabled>* = 0) noexcept :
       ap_float(ap_float_double(d)) {}
 
   // Conversion to native floating point types
   template<typename Enabled = half>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   std::enable_if_t<is_half, Enabled> to_half() const noexcept {
     return *(reinterpret_cast<const half *>(this));
   }
 
   template<typename Enabled = half>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   std::enable_if_t<!is_half, Enabled> to_half() const noexcept {
     return ap_float_half(*this).to_half();
   }
 
   template<typename Enabled = float>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   std::enable_if_t<is_single, Enabled> to_float() const noexcept {
     return *(reinterpret_cast<const float *>(this));
   }
 
   template<typename Enabled = float>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   std::enable_if_t<!is_single, Enabled> to_float() const noexcept {
     return ap_float_single(*this).to_float();
   }
 
   template<typename Enabled = double>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   std::enable_if_t<is_double, Enabled> to_double() const noexcept {
     return *(reinterpret_cast<const double *>(this));
   }
 
   template<typename Enabled = double>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   std::enable_if_t<!is_double, Enabled> to_double() const noexcept {
     return ap_float_double(*this).to_double();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   explicit operator half() const noexcept {
     return to_half();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   explicit operator float() const noexcept {
     return to_float();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   explicit operator double() const noexcept {
     return to_double();
   }
 
   // Conversion from ap_fixed
   template<int W2, int I2, ap_q_mode Q2, ap_o_mode O2, int N2>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   explicit ap_float(const ap_fixed<W2, I2, Q2, O2, N2> &other) noexcept {
     static_assert(E >= log2_ceil(W2+3)+1,
                   "conversion from ap_fixed only supported on ap_float with"
@@ -430,7 +434,7 @@ public:
 
   // Conversion to ap_fixed
   template<int W2, int I2, ap_q_mode Q2, ap_o_mode O2, int N2>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   explicit operator ap_fixed<W2, I2, Q2, O2, N2>() const noexcept {
     static_assert(E >= log2_ceil(W2+3)+1,
                   "conversion from ap_fixed only supported on ap_float with"
@@ -466,7 +470,7 @@ public:
 
   // Conversions from/to other bitwidth
   template<int W2, int E2>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   explicit ap_float(const ap_float<W2, E2> &other) noexcept {
 #ifdef __SYNTHESIS__
     __fpga_float_to_float(this, &other, W2, E2, W, E);
@@ -487,9 +491,9 @@ public:
 
   // Conversion from integer types
 #define AP_FLOAT_FROM_INT(T)                                                   \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float(signed T i) noexcept : ap_float(ap_fixed<W,W>(i)) {}                \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float(unsigned T i) noexcept : ap_float(ap_fixed<W,W>(i)) {}
   AP_FLOAT_FROM_INT(char)
   AP_FLOAT_FROM_INT(short)
@@ -500,11 +504,11 @@ public:
 
   // Conversion to integer types
 #define AP_FLOAT_TO_INT(T)                                                     \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   explicit operator signed T() const noexcept {                                \
     return (T) (ap_fixed<W,W>) *this;                                          \
   }                                                                            \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   explicit operator unsigned T() const noexcept {                              \
     return (T) (ap_fixed<W,W>) *this;                                          \
   }
@@ -516,7 +520,7 @@ public:
 #undef AP_FLOAT_TO_INT
 
   // Inplace addition
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float<W, E>& operator+=(const ap_float<W, E> &other) noexcept {
 #ifdef __SYNTHESIS__
     __fpga_float_add(this, this, &other, W, E);
@@ -541,7 +545,7 @@ public:
   }
 
   // Inplace subtraction
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float<W, E>& operator-=(const ap_float<W, E> &other) noexcept {
 #ifdef __SYNTHESIS__
     __fpga_float_sub(this, this, &other, W, E);
@@ -566,7 +570,7 @@ public:
   }
 
   // Inplace multiplication
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float<W, E>& operator*=(const ap_float<W, E> &other) noexcept {
 #ifdef __SYNTHESIS__
     __fpga_float_mul(this, this, &other, W, E);
@@ -591,7 +595,7 @@ public:
   }
 
   // Inplace division
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float<W, E>& operator/=(const ap_float<W, E> &other) noexcept {
 #ifdef __SYNTHESIS__
     __fpga_float_div(this, this, &other, W, E);
@@ -616,14 +620,14 @@ public:
   }
 
   // Inplace pre-increment
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float& operator++() noexcept {
     *this += one();
     return *this;
   }
 
   // Inplace post-increment
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float operator++(int) noexcept {
     ap_float res = *this;
     ++*this;
@@ -631,14 +635,14 @@ public:
   }
 
   // Inplace pre-decrement
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float& operator--() noexcept {
     *this -= one();
     return *this;
   }
 
   // Inplace post-decrement
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float operator--(int) noexcept {
     ap_float res = *this;
     --*this;
@@ -647,64 +651,64 @@ public:
 
   // Comparisons
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend bool operator==(const ap_float<W0, E0> &lhs,
                          const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend bool operator!=(const ap_float<W0, E0> &lhs,
                          const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend bool operator<(const ap_float<W0, E0> &lhs,
                         const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend bool operator>(const ap_float<W0, E0> &lhs,
                         const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend bool operator<=(const ap_float<W0, E0> &lhs,
                          const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend bool operator>=(const ap_float<W0, E0> &lhs,
                          const ap_float<W0, E0> &rhs) noexcept;
 
   // Unary Expression Operator Overloading
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> operator+(ap_float<W0, E0> val) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> operator-(ap_float<W0, E0> val) noexcept;
 
   // Binary Expression Operator Overloading
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> operator+(ap_float<W0, E0> lhs,
                                     const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> operator-(ap_float<W0, E0> lhs,
                                     const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> operator*(ap_float<W0, E0> lhs,
                                     const ap_float<W0, E0> &rhs) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> operator/(ap_float<W0, E0> lhs,
                                     const ap_float<W0, E0> &rhs) noexcept;
 
   // Math library
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> hls::fma(const ap_float<W0, E0> &lhs,
                                    const ap_float<W0, E0> &rhs,
                                    const ap_float<W0, E0> &add) noexcept;
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend ap_float<W0, E0> hls::sqrt(const ap_float<W0, E0> &val) noexcept;
 
   // Accumulator
@@ -714,19 +718,19 @@ public:
 #ifndef __SYNTHESIS__
   // Output stream printing
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend std::ostream &operator<<(std::ostream &os,
                                   const ap_float<W0, E0> &val) noexcept;
   // Input stream parsing
   template<int W0, int E0>
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   friend std::istream &operator>>(std::istream &os,
                                   ap_float<W0, E0> &val) noexcept;
 #endif
 };
 
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 bool operator==(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 #ifdef __SYNTHESIS__
   return __fpga_float_compare_eq(&lhs, &rhs, W, E);
@@ -748,7 +752,7 @@ bool operator==(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 }
 
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 bool operator!=(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 #ifdef __SYNTHESIS__
   return __fpga_float_compare_ne(&lhs, &rhs, W, E);
@@ -770,7 +774,7 @@ bool operator!=(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 }
 
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 bool operator<(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 #ifdef __SYNTHESIS__
   return __fpga_float_compare_lt(&lhs, &rhs, W, E);
@@ -792,13 +796,13 @@ bool operator<(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 }
 
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 bool operator>(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
   return rhs < lhs;
 }
 
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 bool operator<=(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 #ifdef __SYNTHESIS__
   return __fpga_float_compare_le(&lhs, &rhs, W, E);
@@ -820,21 +824,21 @@ bool operator<=(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
 }
 
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 bool operator>=(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs) noexcept {
   return rhs <= lhs;
 }
 
 // Expression unary plus
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> operator+(ap_float<W, E> val) noexcept {
   return val;
 }
 
 // Expression unary minus
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> operator-(ap_float<W, E> val) noexcept {
   val.sign_ref() = ~val.sign_ref();
   return val;
@@ -842,7 +846,7 @@ ap_float<W, E> operator-(ap_float<W, E> val) noexcept {
 
 // Expression addition
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> operator+(ap_float<W, E> lhs,
                          const ap_float<W, E> &rhs) noexcept {
   return lhs += rhs;
@@ -850,7 +854,7 @@ ap_float<W, E> operator+(ap_float<W, E> lhs,
 
 // Expression subtraction
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> operator-(ap_float<W, E> lhs,
                          const ap_float<W, E> &rhs) noexcept {
   return lhs -= rhs;
@@ -858,7 +862,7 @@ ap_float<W, E> operator-(ap_float<W, E> lhs,
 
 // Expression multiplication
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> operator*(ap_float<W, E> lhs,
                          const ap_float<W, E> &rhs) noexcept {
   return lhs *= rhs;
@@ -866,7 +870,7 @@ ap_float<W, E> operator*(ap_float<W, E> lhs,
 
 // Expression division
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> operator/(ap_float<W, E> lhs,
                          const ap_float<W, E> &rhs) noexcept {
   return lhs /= rhs;
@@ -875,23 +879,23 @@ ap_float<W, E> operator/(ap_float<W, E> lhs,
 // Implicit conversions with native types (when at least one input is ap_float)
 #define AP_FLOAT_COMPARE_WITH_NATIVE(O, T)                                     \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   bool operator O(const ap_float<W, E> &lhs, const T &rhs) noexcept {          \
     return operator O(lhs, ap_float<W, E>(rhs));                               \
   }                                                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   bool operator O(const T &lhs, const ap_float<W, E> &rhs) noexcept {          \
     return operator O(ap_float<W, E>(lhs), rhs);                               \
   }
 #define AP_FLOAT_BIN_OP_WITH_NATIVE(O, T)                                      \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> operator O(const ap_float<W, E> &lhs, const T &rhs) noexcept {\
     return operator O(lhs, ap_float<W, E>(rhs));                               \
   }                                                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> operator O(const T &lhs, const ap_float<W, E> &rhs) noexcept {\
     return operator O(ap_float<W, E>(lhs), rhs);                               \
   }
@@ -926,6 +930,7 @@ AP_FLOAT_WITH_NATIVE(unsigned long long)
 #ifndef __SYNTHESIS__
 // Output stream printing
 template<int W, int E>
+AP_INLINE AP_NODEBUG
 std::ostream &operator<<(std::ostream &os, const ap_float<W, E> &val) noexcept {
   double wr;
   wr = val.to_double(); // FIXME Raw double conversion display too many digits
@@ -935,6 +940,7 @@ std::ostream &operator<<(std::ostream &os, const ap_float<W, E> &val) noexcept {
 
 // Input stream parsing
 template<int W, int E>
+AP_INLINE AP_NODEBUG
 std::istream &operator>>(std::istream &os, ap_float<W, E> &val) noexcept {
   double rd;
   xip_fpo_t xval;
@@ -953,7 +959,7 @@ std::istream &operator>>(std::istream &os, ap_float<W, E> &val) noexcept {
 namespace hls {
 // Fused Multiply and Add
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> fma(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs,
                    const ap_float<W, E> &add) noexcept {
   ap_float<W, E> res;
@@ -986,37 +992,37 @@ ap_float<W, E> fma(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs,
 // Implicit conversions with native types (when at least one input is ap_float)
 #define AP_FLOAT_FMA_WITH_NATIVE(T)                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> fma(const T &lhs, const ap_float<W, E> &rhs,                  \
                      const ap_float<W, E> &add) noexcept {                     \
     return fma(ap_float<W, E>(lhs), rhs, add);                                 \
   }                                                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> fma(const ap_float<W, E> &lhs, const T &rhs,                  \
                      const ap_float<W, E> &add) noexcept {                     \
     return fma(lhs, ap_float<W, E>(rhs), add);                                 \
   }                                                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> fma(const ap_float<W, E> &lhs, const ap_float<W, E> &rhs,     \
                      const T &add) noexcept {                                  \
     return fma(lhs, rhs, ap_float<W, E>(add));                                 \
   }                                                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> fma(const T &lhs, const T &rhs, const ap_float<W, E> &add)    \
       noexcept {                                                               \
     return fma(ap_float<W, E>(lhs), ap_float<W, E>(rhs), add);                 \
   }                                                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> fma(const T &lhs, const ap_float<W, E> &rhs, const T &add)    \
       noexcept {                                                               \
     return fma(ap_float<W, E>(lhs), rhs, ap_float<W, E>(add));                 \
   }                                                                            \
   template<int W, int E>                                                       \
-  INLINE NODEBUG                                                               \
+  AP_INLINE AP_NODEBUG                                                               \
   ap_float<W, E> fma(const ap_float<W, E> &lhs, const T &rhs, const T &add)    \
       noexcept {                                                               \
     return fma(lhs, ap_float<W, E>(rhs), ap_float<W, E>(add));                 \
@@ -1038,7 +1044,7 @@ AP_FLOAT_FMA_WITH_NATIVE(unsigned long long)
 
 // Square Root
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> sqrt(const ap_float<W, E> &val) noexcept {
   ap_float<W, E> res;
 #ifdef __SYNTHESIS__
@@ -1061,7 +1067,7 @@ ap_float<W, E> sqrt(const ap_float<W, E> &val) noexcept {
 
 // Absolute value
 template<int W, int E>
-INLINE NODEBUG
+AP_INLINE AP_NODEBUG
 ap_float<W, E> abs(ap_float<W, E> val) noexcept {
   val.sign_ref() = 0;
   return val;
@@ -1104,47 +1110,47 @@ struct numeric_limits<ap_float<W, E>> {
   static constexpr bool traps = false;
   static constexpr bool tinyness_before = false;
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> lowest() noexcept {
     return ap_float<W, E>::lowest();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> denorm_min() noexcept {
     return ap_float<W, E>::min_denorm();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> min() noexcept {
     return ap_float<W, E>::min();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> epsilon() noexcept {
     return ap_float<W, E>::epsilon();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> round_error() noexcept {
     return ap_float<W, E>::one_half();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> max() noexcept {
     return ap_float<W, E>::max();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> infinity() noexcept {
     return ap_float<W, E>::infinity();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> quiet_NaN() noexcept {
     return ap_float<W, E>::quiet_NaN();
   }
 
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   static constexpr ap_float<W, E> signaling_NaN() noexcept {
     return ap_float<W, E>::signaling_NaN();
   }
@@ -1204,7 +1210,7 @@ public:
   ap_float_acc& operator=(const ap_float_acc &) = delete;
 
   // Public API
-  INLINE NODEBUG
+  AP_INLINE AP_NODEBUG
   ap_float<W, E> accumulate(const ap_float<W, E> &val, bool last) noexcept {
     ap_float<W, E> res;
 #ifdef __SYNTHESIS__
@@ -1229,5 +1235,9 @@ public:
     return res;
   }
 };
+
+#ifndef AP_FLOAT_SLOW_BF16
+#include <etc/ap_float_bf16.h>
+#endif
 
 #endif

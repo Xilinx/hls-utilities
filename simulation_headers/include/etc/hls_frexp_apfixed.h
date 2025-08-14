@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -41,7 +41,6 @@ ap_fixed<W,I> frexp(ap_fixed<W,I>   x,
     int  pos = 0;//should be log(mqx(I,F));
     //use clz_table to reduce the loop_tripcount
     static const int loop_nm = W > 6 ? (W + 5)/6 : 1;
-    CLZ_LOOP:
     for(int l = loop_nm; l > 0; --l){
     #pragma HLS pipeline II=1
        ap_uint<6> t = 0;

@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -145,12 +145,12 @@ struct axis {
 
 #ifdef AESL_SYN
 
-  NODEBUG Type_data get_data() const {
+  AP_NODEBUG Type_data get_data() const {
 #pragma HLS inline
     assert(has_data);
     return data;
   }
-  NODEBUG void set_data(Type_data d) {
+  AP_NODEBUG void set_data(Type_data d) {
 #pragma HLS inline
     assert(has_data);
     data = d;
@@ -213,7 +213,7 @@ struct axis {
 
 // For original `qdma_axis`
 #ifdef AESL_SYN
-  NODEBUG
+  AP_NODEBUG
 #endif
   void keep_all() {
 #pragma HLS inline
@@ -313,22 +313,22 @@ class stream<axis<T, WUser, WId, WDest, EnableSignals, StrictEnablement>>
 public:
   using value_type = __STREAM_T__;
   /// Constructors
-  INLINE NODEBUG stream() {}
+  AP_INLINE AP_NODEBUG stream() {}
 
-  INLINE NODEBUG stream(const char *name) { (void)name; }
+  AP_INLINE AP_NODEBUG stream(const char *name) { (void)name; }
 
   /// Make copy constructor and assignment operator private
 private:
-  INLINE NODEBUG stream(const stream<__STREAM_T__> &chn) : V(chn.V) {}
+  AP_INLINE AP_NODEBUG stream(const stream<__STREAM_T__> &chn) : V(chn.V) {}
 
 public:
   /// Overload >> and << operators to implement read() and write()
-  INLINE NODEBUG void operator>>(__STREAM_T__ &rdata) { read(rdata); }
+  AP_INLINE AP_NODEBUG void operator>>(__STREAM_T__ &rdata) { read(rdata); }
 
-  INLINE NODEBUG void operator<<(const __STREAM_T__ &wdata) { write(wdata); }
+  AP_INLINE AP_NODEBUG void operator<<(const __STREAM_T__ &wdata) { write(wdata); }
 
   /// empty & full
-  NODEBUG bool empty() {
+  AP_NODEBUG bool empty() {
 #pragma HLS inline
     bool tmp = __fpga_axis_valid(
         V.get_data_ptr(), V.get_keep_ptr(), V.get_strb_ptr(), V.get_user_ptr(),
@@ -336,7 +336,7 @@ public:
     return !tmp;
   }
 
-  NODEBUG bool full() {
+  AP_NODEBUG bool full() {
 #pragma HLS inline
     bool tmp = __fpga_axis_ready(
         V.get_data_ptr(), V.get_keep_ptr(), V.get_strb_ptr(), V.get_user_ptr(),
@@ -345,7 +345,7 @@ public:
   }
 
   /// Blocking read
-  NODEBUG void read(__STREAM_T__ &dout) {
+  AP_NODEBUG void read(__STREAM_T__ &dout) {
 #pragma HLS inline
     __STREAM_T__ tmp;
     __fpga_axis_pop(V.get_data_ptr(), V.get_keep_ptr(), V.get_strb_ptr(),
@@ -356,7 +356,7 @@ public:
     dout = tmp;
   }
 
-  NODEBUG __STREAM_T__ read() {
+  AP_NODEBUG __STREAM_T__ read() {
 #pragma HLS inline
     __STREAM_T__ tmp;
     __fpga_axis_pop(V.get_data_ptr(), V.get_keep_ptr(), V.get_strb_ptr(),
@@ -368,7 +368,7 @@ public:
   }
 
   /// Blocking write
-  NODEBUG void write(const __STREAM_T__ &din) {
+  AP_NODEBUG void write(const __STREAM_T__ &din) {
 #pragma HLS inline
     __STREAM_T__ tmp = din;
     __fpga_axis_push(V.get_data_ptr(), V.get_keep_ptr(), V.get_strb_ptr(),
@@ -379,7 +379,7 @@ public:
   }
 
   /// Non-Blocking read
-  NODEBUG bool read_nb(__STREAM_T__ &dout) {
+  AP_NODEBUG bool read_nb(__STREAM_T__ &dout) {
 #pragma HLS inline
     __STREAM_T__ tmp;
     if (__fpga_axis_nb_pop(V.get_data_ptr(), V.get_keep_ptr(), V.get_strb_ptr(),
@@ -396,7 +396,7 @@ public:
   }
 
   /// Non-Blocking write
-  NODEBUG bool write_nb(const __STREAM_T__ &in) {
+  AP_NODEBUG bool write_nb(const __STREAM_T__ &in) {
 #pragma HLS inline
     __STREAM_T__ tmp = in;
     bool full_n = __fpga_axis_nb_push(

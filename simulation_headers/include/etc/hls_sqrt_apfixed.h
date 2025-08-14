@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -11,6 +11,9 @@
 #ifndef __SYNTHESIS__
 #include "assert.h"
 #endif
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmisleading-indentation"
 
 template <int W_, int I_>
 ap_fixed<W_,I_> sqrt_fixed(ap_fixed<W_,I_> x)
@@ -431,5 +434,7 @@ ap_uint<I_> recip_fixed(ap_uint<I_> x) {
     ap_fixed<I_+1,I_+1> xf = x;
     return recip_fixed(xf);
 }
+
+#pragma clang diagnostic pop
 
 #endif

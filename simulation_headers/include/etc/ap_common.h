@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -121,12 +121,31 @@
 
 // Attribute only for synthesis
 #ifdef __SYNTHESIS__
-#define INLINE inline __attribute__((always_inline))
-#define NODEBUG __attribute__((nodebug))
-//#define INLINE inline __attribute__((noinline))
+#ifndef AP_INLINE
+#define AP_INLINE inline __attribute__((always_inline))
+#endif
+#ifndef AP_NODEBUG
+#define AP_NODEBUG __attribute__((nodebug))
+#endif
 #else
+#ifndef AP_INLINE
+#define AP_INLINE inline
+#endif
+#ifndef AP_NODEBUG
+#define AP_NODEBUG
+#endif
+#endif
+
+// FIXME: INLINE was defined in the past, so we still provide it
+//        as backward compatibility, but ideally this should be
+//        removed in the future.
+#ifndef INLINE
 #define INLINE inline
-#define NODEBUG
+#if defined(__has_warning)
+#if __has_warning("-Wdeprecated-pragma")
+#pragma clang deprecated(INLINE)
+#endif
+#endif
 #endif
 
 #define AP_WEAK
@@ -232,15 +251,15 @@ struct ssdm_int;
   struct ssdm_int<_AP_N + 1024 * mode, true> {                                \
     typedef int __attribute__((bitwidth(_AP_N + 1024 * mode))) DataType;      \
     int V __attribute__((bitwidth(_AP_N + 1024 * mode)));                     \
-    INLINE ssdm_int<_AP_N + 1024 * mode, true>() = default;                   \
-    HLS_CONSTEXPR INLINE ssdm_int<_AP_N + 1024 * mode, true>(int o __attribute__((bitwidth(_AP_N + 1024 * mode)))):V(o){};                           \
+    AP_INLINE ssdm_int<_AP_N + 1024 * mode, true>() = default;                   \
+    HLS_CONSTEXPR AP_INLINE ssdm_int<_AP_N + 1024 * mode, true>(int o __attribute__((bitwidth(_AP_N + 1024 * mode)))):V(o){};                           \
   };                                                                          \
   template <>                                                                 \
   struct ssdm_int<_AP_N + 1024 * mode, false> {                               \
     typedef unsigned __attribute__((bitwidth(_AP_N + 1024 * mode))) DataType; \
     unsigned int V __attribute__((bitwidth(_AP_N + 1024 * mode)));            \
-    INLINE ssdm_int<_AP_N + 1024 * mode, false>() = default;                  \
-    HLS_CONSTEXPR INLINE ssdm_int<_AP_N + 1024 * mode, false>(unsigned int o __attribute__((bitwidth(_AP_N + 1024 * mode)))):V(o){};                           \
+    AP_INLINE ssdm_int<_AP_N + 1024 * mode, false>() = default;                  \
+    HLS_CONSTEXPR AP_INLINE ssdm_int<_AP_N + 1024 * mode, false>(unsigned int o __attribute__((bitwidth(_AP_N + 1024 * mode)))):V(o){};                           \
   };
 
 #if MAX_MODE(AP_INT_MAX_W) >= 1
@@ -511,16 +530,16 @@ template <int _AP_N>
 struct ssdm_int<_AP_N, true> {
   typedef int __attribute__((bitwidth(_AP_N))) DataType;
   int V __attribute__((bitwidth(_AP_N)));
-  INLINE ssdm_int<_AP_N, true>() = default;
-  HLS_CONSTEXPR INLINE ssdm_int<_AP_N, true>(int o __attribute__((bitwidth(_AP_N)))):V(o){};
+  AP_INLINE ssdm_int<_AP_N, true>() = default;
+  HLS_CONSTEXPR AP_INLINE ssdm_int<_AP_N, true>(int o __attribute__((bitwidth(_AP_N)))):V(o){};
 };
 
 template <int _AP_N>
 struct ssdm_int<_AP_N, false> {
   typedef unsigned __attribute__((bitwidth(_AP_N))) DataType;
   unsigned V __attribute__((bitwidth(_AP_N)));
-  INLINE ssdm_int<_AP_N, false>() = default;
-  HLS_CONSTEXPR INLINE ssdm_int<_AP_N, false>(unsigned o __attribute__((bitwidth(_AP_N)))):V(o){};
+  AP_INLINE ssdm_int<_AP_N, false>() = default;
+  HLS_CONSTEXPR AP_INLINE ssdm_int<_AP_N, false>(unsigned o __attribute__((bitwidth(_AP_N)))):V(o){};
 };
 
 #endif // clang 3.1 test
@@ -707,7 +726,7 @@ HLS_CONSTEXPR_EXTRA inline _Tp1& _AP_ROOT_op_set_range(_Tp1& Val, const _Tp2& Lo
 #define APFX_IEEE_DOUBLE_E_MAX DOUBLE_BIAS
 #define APFX_IEEE_DOUBLE_E_MIN (-DOUBLE_BIAS + 1)
 
-INLINE ap_ulong doubleToRawBits(double pf) {
+AP_INLINE ap_ulong doubleToRawBits(double pf) {
   union {
     ap_ulong __L;
     double __D;
@@ -716,7 +735,7 @@ INLINE ap_ulong doubleToRawBits(double pf) {
   return LD.__L;
 }
 
-INLINE unsigned int floatToRawBits(float pf) {
+AP_INLINE unsigned int floatToRawBits(float pf) {
   union {
     unsigned int __L;
     float __D;
@@ -725,7 +744,7 @@ INLINE unsigned int floatToRawBits(float pf) {
   return LD.__L;
 }
 
-INLINE unsigned short halfToRawBits(half pf) {
+AP_INLINE unsigned short halfToRawBits(half pf) {
 #ifdef __SYNTHESIS__
   union {
     unsigned short __L;
@@ -739,7 +758,7 @@ INLINE unsigned short halfToRawBits(half pf) {
 }
 
 // usigned long long is at least 64-bit
-INLINE double rawBitsToDouble(ap_ulong pi) {
+AP_INLINE double rawBitsToDouble(ap_ulong pi) {
   union {
     ap_ulong __L;
     double __D;
@@ -749,7 +768,7 @@ INLINE double rawBitsToDouble(ap_ulong pi) {
 }
 
 // long is at least 32-bit
-INLINE float rawBitsToFloat(unsigned long pi) {
+AP_INLINE float rawBitsToFloat(unsigned long pi) {
   union {
     unsigned int __L;
     float __D;
@@ -759,7 +778,7 @@ INLINE float rawBitsToFloat(unsigned long pi) {
 }
 
 // short is at least 16-bit
-INLINE half rawBitsToHalf(unsigned short pi) {
+AP_INLINE half rawBitsToHalf(unsigned short pi) {
 #ifdef __SYNTHESIS__
   union {
     unsigned short __L;

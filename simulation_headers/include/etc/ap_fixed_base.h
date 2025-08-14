@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -271,7 +271,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   /// report invalid constrction of ap_fixed_base
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG void report() {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void report() {
 #ifdef HLS_CONSTEXPR_EXTRA_ENABLE
     static_assert(!_AP_S || _AP_O != AP_WRAP_SM, "ap_ufxied<...> cannot support AP_WRAP_SM.\n");
     static_assert(_AP_W <= MAX_MODE(AP_INT_MAX_W) * 1024, 
@@ -294,12 +294,12 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #endif
   }
 #else
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG void report() {}
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void report() {}
 #endif // ifdef __SYNTHESIS__
 
   /// @name helper functions.
   //  @{
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG void overflow_adjust(bool underflow, bool overflow, bool lD,
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void overflow_adjust(bool underflow, bool overflow, bool lD,
                               bool sign) {
     if (!underflow && !overflow) return;
     if (_AP_O == AP_WRAP) {
@@ -363,7 +363,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
     }
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool quantization_adjust(bool qb, bool r, bool s) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool quantization_adjust(bool qb, bool r, bool s) {
     bool carry = (bool)_AP_ROOT_op_get_bit(Base::V, _AP_W - 1);
     if (_AP_Q == AP_TRN) return false;
     if (_AP_Q == AP_RND_ZERO)
@@ -381,7 +381,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
   //  @}
   
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG int countLeadingOnes() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG int countLeadingOnes() const {
 #if (defined __AP_INT_WARNING__) && (!defined __SYNTHESIS__)
     return Base::V.countLeadingOnes();
 #else
@@ -394,12 +394,12 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
   /// @name constructors.
   //  @{
   /// default ctor.
-  INLINE NODEBUG ap_fixed_base() = default;
+  AP_INLINE AP_NODEBUG ap_fixed_base() = default;
 
   /// copy ctor.
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op):Base(op.V) {
 #ifndef HLS_CONSTEXPR_EXTRA_ENABLE
     operator=(op);
@@ -411,14 +411,14 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_fixed_base(
+  AP_INLINE AP_NODEBUG ap_fixed_base(
       const volatile ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     operator=(op);
     report();
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const ap_int_base<_AP_W2, _AP_S2>& op):Base(op.V) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base(const ap_int_base<_AP_W2, _AP_S2>& op):Base(op.V) {
     ap_fixed_base<_AP_W2, _AP_W2, _AP_S2> tmp(0);
     tmp.V = op.V;
 #ifndef HLS_CONSTEXPR_EXTRA_ENABLE
@@ -430,7 +430,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_fixed_base(const volatile ap_int_base<_AP_W2, _AP_S2>& op) {
+  AP_INLINE AP_NODEBUG ap_fixed_base(const volatile ap_int_base<_AP_W2, _AP_S2>& op) {
     ap_fixed_base<_AP_W2, _AP_W2, _AP_S2> tmp;
     tmp.V = op.V;
     operator=(tmp);
@@ -439,7 +439,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
 #ifndef __SYNTHESIS__
 #ifndef NON_C99STRING
-  INLINE NODEBUG ap_fixed_base(const char* s, signed char rd = 0) {
+  AP_INLINE AP_NODEBUG ap_fixed_base(const char* s, signed char rd = 0) {
     AP_ASSERT(0 != s, "ap_fixed<> is being initialized with a NULL pointer which is not a valid C string");
     unsigned char radix = rd;
     std::string str = ap_private_ops::parseString(s, radix); // will guess rd, default 10
@@ -449,7 +449,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
     fromString(str, radix);
   }
 #else
-  INLINE NODEBUG ap_fixed_base(const char* s, signed char rd = 10) {
+  AP_INLINE AP_NODEBUG ap_fixed_base(const char* s, signed char rd = 10) {
     ap_int_base<_AP_W, _AP_S> t(s, rd);
     Base::V = t.V;
   }
@@ -457,13 +457,13 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #else // ifndef __SYNTHESIS__
   // XXX _ssdm_string2bits only takes const string and const radix.
   // It seems XFORM will do compile time processing of the string.
-  INLINE NODEBUG ap_fixed_base(const char* s) {
+  AP_INLINE AP_NODEBUG ap_fixed_base(const char* s) {
     typeof(Base::V) t;
     _ssdm_string2bits((void*)(&t), (const char*)(s), 10, _AP_I, _AP_S, _AP_Q,
                       _AP_O, _AP_N, _AP_C99);
     Base::V = t;
   }
-  INLINE NODEBUG ap_fixed_base(const char* s, signed char rd) {
+  AP_INLINE AP_NODEBUG ap_fixed_base(const char* s, signed char rd) {
     typeof(Base::V) t;
     _ssdm_string2bits((void*)(&t), (const char*)(s), rd, _AP_I, _AP_S, _AP_Q,
                       _AP_O, _AP_N, _AP_C99);
@@ -472,19 +472,19 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
 #endif // ifndef __SYNTHESIS__ else
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_fixed_base(const ap_bit_ref<_AP_W2, _AP_S2>& op) {
+  AP_INLINE AP_NODEBUG ap_fixed_base(const ap_bit_ref<_AP_W2, _AP_S2>& op) {
     *this = ((bool)op);
     report();
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG ap_fixed_base(const ap_range_ref<_AP_W2, _AP_S2>& op) {
+  AP_INLINE AP_NODEBUG ap_fixed_base(const ap_range_ref<_AP_W2, _AP_S2>& op) {
     *this = (ap_int_base<_AP_W2, false>(op));
     report();
   }
 
   template <int _AP_W2, typename _AP_T2, int _AP_W3, typename _AP_T3>
-  INLINE NODEBUG ap_fixed_base(
+  AP_INLINE AP_NODEBUG ap_fixed_base(
       const ap_concat_ref<_AP_W2, _AP_T2, _AP_W3, _AP_T3>& op) {
     *this = (ap_int_base<_AP_W2 + _AP_W3, false>(op));
     report();
@@ -492,7 +492,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_fixed_base(
+  AP_INLINE AP_NODEBUG ap_fixed_base(
       const af_bit_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     *this = (bool(op));
     report();
@@ -500,7 +500,7 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_fixed_base(
+  AP_INLINE AP_NODEBUG ap_fixed_base(
       const af_range_ref<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     *this = (ap_int_base<_AP_W2, false>(op));
     report();
@@ -510,15 +510,15 @@ struct ap_fixed_base : _AP_ROOT_TYPE<_AP_W, _AP_S> {
   // make a temp ap_fixed_base first, and use ap_fixed_base.operator=
 #ifndef HLS_CONSTEXPR_EXTRA_ENABLE 
 #define CTOR_FROM_INT(C_TYPE, _AP_W2, _AP_S2)                              \
-  INLINE NODEBUG ap_fixed_base(const C_TYPE x) {                                   \
+  AP_INLINE AP_NODEBUG ap_fixed_base(const C_TYPE x) {                                   \
     ap_fixed_base<(_AP_W2), (_AP_W2), (_AP_S2)> tmp;                       \
     tmp.V = x;                                                             \
     *this = tmp;                                                           \
   }
 #else
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):Base(c1) {}
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base(const bool c1, const bool c2):Base(c1) {}
 #define CTOR_FROM_INT(C_TYPE, _AP_W2, _AP_S2)        \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const C_TYPE x):Base(x) {       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base(const C_TYPE x):Base(x) {       \
     ap_fixed_base<(_AP_W2), (_AP_W2), (_AP_S2)> tmp(1,1);                  \
     tmp.V = x;                                                             \
     equal_constexpr(tmp);                                                  \
@@ -541,10 +541,10 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 /*
  * TODO:
  *Theere used to be several funtions which were AP_WEAK.
- *Now they're all INLINE expect ap_fixed_base(double d)
- *Maybe we can use '#pragma HLS inline' instead of INLINE.
+ *Now they're all AP_INLINE expect ap_fixed_base(double d)
+ *Maybe we can use '#pragma HLS inline' instead of AP_INLINE.
  */
-  AP_WEAK NODEBUG ap_fixed_base(double d) {
+  AP_WEAK AP_NODEBUG ap_fixed_base(double d) {
     ap_int_base<64, false> ireg;
     ireg.V = doubleToRawBits(d);
     bool isneg = _AP_ROOT_op_get_bit(ireg.V, 63);
@@ -662,16 +662,16 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   // TODO more optimized implementation.
-  INLINE NODEBUG ap_fixed_base(float d) { *this = ap_fixed_base(double(d)); }
+  AP_INLINE AP_NODEBUG ap_fixed_base(float d) { *this = ap_fixed_base(double(d)); }
 
   // TODO more optimized implementation.
-  INLINE NODEBUG ap_fixed_base(half d) { *this = ap_fixed_base(double(d)); }
+  AP_INLINE AP_NODEBUG ap_fixed_base(half d) { *this = ap_fixed_base(double(d)); }
   //  @}
 
   /// @name assign operator
   /// assign, using another ap_fixed_base of same template parameters.
   /*
-  INLINE NODEBUG ap_fixed_base& operator=(
+  AP_INLINE AP_NODEBUG ap_fixed_base& operator=(
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op) {
     Base::V = op.V;
     return *this;
@@ -680,7 +680,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 #ifdef HLS_CONSTEXPR_EXTRA_ENABLE
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& equal_constexpr(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& equal_constexpr(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
 
     const int _AP_F = _AP_W - _AP_I;
@@ -801,7 +801,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator=(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
 
     const int _AP_F = _AP_W - _AP_I;
@@ -910,21 +910,21 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG ap_fixed_base& operator=(
+  AP_INLINE AP_NODEBUG ap_fixed_base& operator=(
       const volatile ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
     operator=(const_cast<const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>&>(op));
     return *this;
   }
 
   /// Set this ap_fixed_base with ULL.
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& setBits(ap_ulong bv) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& setBits(ap_ulong bv) {
     // TODO when ull is not be long enough...
     Base::V = bv;
     return *this;
   }
 
   /// Return a ap_fixed_base object whose this->V is assigned by bv.
-  static INLINE NODEBUG ap_fixed_base bitsToFixed(ap_ulong bv) {
+  static AP_INLINE AP_NODEBUG ap_fixed_base bitsToFixed(ap_ulong bv) {
     // TODO fix when ull is not be long enough...
     ap_fixed_base t;
 #ifdef __SYNTHESIS__
@@ -935,7 +935,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
     return t;
   }
   
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG void checkOverflowCsimFix(int _ap_w2, bool _ap_s2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void checkOverflowCsimFix(int _ap_w2, bool _ap_s2) const {
   #if (defined __AP_INT_WARNING__) && (!defined __SYNTHESIS__)
       int ap_w_l = _ap_w2;
       bool ap_s_l = _ap_s2;
@@ -981,7 +981,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   /** Captures all integer bits, in truncate mode.
    *  @param[in] Cnative follow conversion from double to int.
    */
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int_base<AP_MAX(_AP_I, 1), _AP_S> to_ap_int_base(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int_base<AP_MAX(_AP_I, 1), _AP_S> to_ap_int_base(
       bool Cnative = true) const {
     ap_int_base<AP_MAX(_AP_I, 1), _AP_S> ret(0);
     if (_AP_I == 0) {
@@ -1015,26 +1015,26 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
  public:
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator ap_int_base<_AP_W2, _AP_S2>() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator ap_int_base<_AP_W2, _AP_S2>() const {
     return ap_int_base<_AP_W2, _AP_S2>(to_ap_int_base());
   }
 
   // Explicit conversion function to C built-in integral type.
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG char to_char() const { return to_ap_int_base().to_char(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG char to_char() const { return to_ap_int_base().to_char(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG int to_int() const { return to_ap_int_base().to_int(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG int to_int() const { return to_ap_int_base().to_int(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG unsigned to_uint() const { return to_ap_int_base().to_uint(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG unsigned to_uint() const { return to_ap_int_base().to_uint(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_slong to_int64() const { return to_ap_int_base().to_int64(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_slong to_int64() const { return to_ap_int_base().to_int64(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_ulong to_uint64() const { return to_ap_int_base().to_uint64(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_ulong to_uint64() const { return to_ap_int_base().to_uint64(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int<_AP_I> to_ap_int() const { return ap_int<_AP_I>(to_ap_int_base()); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int<_AP_I> to_ap_int() const { return ap_int<_AP_I>(to_ap_int_base()); }
 
   /// covert function to double.
   /** only round-half-to-even mode supported, does not obey FE env. */
-  INLINE NODEBUG double to_double() const {
+  AP_INLINE AP_NODEBUG double to_double() const {
 #if defined(AP_FIXED_ENABLE_CPP_FENV)
     _AP_WARNING(std::fegetround() != FE_TONEAREST,
                 "Only FE_TONEAREST is supported");
@@ -1084,7 +1084,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   /// convert function to float.
   /** only round-half-to-even mode supported, does not obey FE env. */
-  INLINE NODEBUG float to_float() const {
+  AP_INLINE AP_NODEBUG float to_float() const {
 #if defined(AP_FIXED_ENABLE_CPP_FENV)
     _AP_WARNING(std::fegetround() != FE_TONEAREST,
                 "Only FE_TONEAREST is supported");
@@ -1131,7 +1131,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   /// convert function to half.
   /** only round-half-to-even mode supported, does not obey FE env. */
-  INLINE NODEBUG half to_half() const {
+  AP_INLINE AP_NODEBUG half to_half() const {
 #if defined(AP_FIXED_ENABLE_CPP_FENV)
     _AP_WARNING(std::fegetround() != FE_TONEAREST,
                 "Only FE_TONEAREST is supported");
@@ -1177,51 +1177,51 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   // FIXME inherited from old code, this may loose precision!
-  INLINE NODEBUG operator long double() const { return (long double)to_double(); }
+  AP_INLINE AP_NODEBUG operator long double() const { return (long double)to_double(); }
 
-  INLINE NODEBUG operator double() const { return to_double(); }
+  AP_INLINE AP_NODEBUG operator double() const { return to_double(); }
 
-  INLINE NODEBUG operator float() const { return to_float(); }
+  AP_INLINE AP_NODEBUG operator float() const { return to_float(); }
 
-  INLINE NODEBUG operator half() const { return to_half(); }
+  AP_INLINE AP_NODEBUG operator half() const { return to_half(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator bool() const { return (bool)Base::V != 0; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator bool() const { return (bool)Base::V != 0; }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator char() const { return (char)to_int(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator char() const { return (char)to_int(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator signed char() const { return (signed char)to_int(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator signed char() const { return (signed char)to_int(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator unsigned char() const { return (unsigned char)to_uint(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator unsigned char() const { return (unsigned char)to_uint(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator short() const { return (short)to_int(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator short() const { return (short)to_int(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator unsigned short() const { return (unsigned short)to_uint(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator unsigned short() const { return (unsigned short)to_uint(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator int() const { return to_int(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator int() const { return to_int(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator unsigned int() const { return to_uint(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator unsigned int() const { return to_uint(); }
 
 // FIXME don't assume data width...
 #ifdef __x86_64__
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator long() const { return (long)to_int64(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator long() const { return (long)to_int64(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator unsigned long() const { return (unsigned long)to_uint64(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator unsigned long() const { return (unsigned long)to_uint64(); }
 #else
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator long() const { return (long)to_int(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator long() const { return (long)to_int(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator unsigned long() const { return (unsigned long)to_uint(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator unsigned long() const { return (unsigned long)to_uint(); }
 #endif // ifdef __x86_64__ else
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator ap_ulong() const { return to_uint64(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator ap_ulong() const { return to_uint64(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG operator ap_slong() const { return to_int64(); }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG operator ap_slong() const { return to_int64(); }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG int length() const { return _AP_W; };
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG int length() const { return _AP_W; };
 
   // bits_to_int64 deleted.
 #ifndef __SYNTHESIS__
   // Used in autowrap, when _AP_W < 64.
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_ulong bits_to_uint64() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_ulong bits_to_uint64() const {
     return (Base::V).to_uint64();
   }
 #endif
@@ -1229,7 +1229,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   // Count the number of zeros from the most significant bit
   // to the first one bit. Note this is only for ap_fixed_base whose
   // _AP_W <= 64, otherwise will incur assertion.
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG int countLeadingZeros() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG int countLeadingZeros() const {
 #ifdef __SYNTHESIS__
     // TODO: used llvm.ctlz intrinsic ?
     if (_AP_W <= 32) {
@@ -1267,7 +1267,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   // -------------------------------------------------------------------------
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename RType<_AP_W2, _AP_I2, _AP_S2>::mult operator*(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename RType<_AP_W2, _AP_I2, _AP_S2>::mult operator*(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op2)
       const {
     typename RType<_AP_W2, _AP_I2, _AP_S2>::mult_base r(0), t(0);
@@ -1281,7 +1281,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  INLINE NODEBUG typename RType<_AP_W2, _AP_I2, _AP_S2>::div operator/(
+  AP_INLINE AP_NODEBUG typename RType<_AP_W2, _AP_I2, _AP_S2>::div operator/(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op2)
       const {
     typename RType<_AP_W2, _AP_I2, _AP_S2>::div_base r;
@@ -1338,7 +1338,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 #define OP_BIN_AF(Sym, Rty)                                                \
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,         \
             ap_o_mode _AP_O2, int _AP_N2>                                  \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename RType<_AP_W2, _AP_I2, _AP_S2>::Rty operator Sym(         \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename RType<_AP_W2, _AP_I2, _AP_S2>::Rty operator Sym(         \
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& \
           op2) const {                                                     \
     typename RType<_AP_W2, _AP_I2, _AP_S2>::Rty##_base ret(0), lhs(*this),    \
@@ -1358,7 +1358,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 #define OP_ASSIGN_AF(Sym)                                                  \
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,         \
             ap_o_mode _AP_O2, int _AP_N2>                                  \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator Sym##=(               \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator Sym##=(               \
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& \
           op2) {                                                           \
     *this = operator Sym(op2);                                             \
@@ -1377,26 +1377,26 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   // -------------------------------------------------------------------------
 
   /// Prefix increment
-  INLINE NODEBUG ap_fixed_base& operator++() {
+  AP_INLINE AP_NODEBUG ap_fixed_base& operator++() {
     operator+=(ap_fixed_base<_AP_W - _AP_I + 1, 1, false>(1));
     return *this;
   }
 
   /// Prefix decrement.
-  INLINE NODEBUG ap_fixed_base& operator--() {
+  AP_INLINE AP_NODEBUG ap_fixed_base& operator--() {
     operator-=(ap_fixed_base<_AP_W - _AP_I + 1, 1, false>(1));
     return *this;
   }
 
   /// Postfix increment
-  INLINE NODEBUG const ap_fixed_base operator++(int) {
+  AP_INLINE AP_NODEBUG const ap_fixed_base operator++(int) {
     ap_fixed_base r(*this);
     operator++();
     return r;
   }
 
   /// Postfix decrement
-  INLINE NODEBUG const ap_fixed_base operator--(int) {
+  AP_INLINE AP_NODEBUG const ap_fixed_base operator--(int) {
     ap_fixed_base r(*this);
     operator--();
     return r;
@@ -1404,15 +1404,15 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   // Unary arithmetic.
   // -------------------------------------------------------------------------
-  INLINE NODEBUG typename _ap_fixed_factory<_AP_W, _AP_I, _AP_S>::type operator+() { return *this; }
+  AP_INLINE AP_NODEBUG typename _ap_fixed_factory<_AP_W, _AP_I, _AP_S>::type operator+() { return *this; }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename _ap_fixed_factory<_AP_W + 1, _AP_I + 1, true>::type operator-() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename _ap_fixed_factory<_AP_W + 1, _AP_I + 1, true>::type operator-() const {
     ap_fixed_base<_AP_W + 1, _AP_I + 1, true> r(*this);
     r.V = -r.V;
     return r;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base<_AP_W, _AP_I, true, _AP_Q, _AP_O, _AP_N> getNeg() {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base<_AP_W, _AP_I, true, _AP_Q, _AP_O, _AP_N> getNeg() {
     ap_fixed_base<_AP_W, _AP_I, true, _AP_Q, _AP_O, _AP_N> r(*this);
     r.V = -r.V;
     return r;
@@ -1420,12 +1420,12 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   // Not (!)
   // -------------------------------------------------------------------------
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator!() const { return Base::V == (unsigned long)0; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator!() const { return Base::V == (unsigned long)0; }
 
   // Bitwise complement
   // -------------------------------------------------------------------------
   // XXX different from Mentor's ac_fixed.
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S> operator~() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S> operator~() const {
     ap_fixed_base<_AP_W, _AP_I, _AP_S> r(0);
     r.V = ~Base::V;
     return r;
@@ -1435,14 +1435,14 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   // -------------------------------------------------------------------------
   // left shift is the same as moving point right, i.e. increate I.
   template <int _AP_SHIFT>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base<_AP_W, _AP_I + _AP_SHIFT, _AP_S> lshift() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base<_AP_W, _AP_I + _AP_SHIFT, _AP_S> lshift() const {
     ap_fixed_base<_AP_W, _AP_I + _AP_SHIFT, _AP_S> r(0);
     r.V = Base::V;
     return r;
   }
 
   template <int _AP_SHIFT>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base<_AP_W, _AP_I - _AP_SHIFT, _AP_S> rshift() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base<_AP_W, _AP_I - _AP_SHIFT, _AP_S> rshift() const {
     ap_fixed_base<_AP_W, _AP_I - _AP_SHIFT, _AP_S> r(0);
     r.V = Base::V;
     return r;
@@ -1452,7 +1452,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   // operators do not carry out any quantization or overflow
   // While systemc, shift assigns for sc_fixed/sc_ufixed will result in
   // quantization or overflow (depending on the mode of the first operand)
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator<<(unsigned int sh) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator<<(unsigned int sh) const {
     ap_fixed_base r(0);
     r.V = Base::V << sh;
 // TODO check shift overflow?
@@ -1486,7 +1486,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
     return r;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator>>(unsigned int sh) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator>>(unsigned int sh) const {
     ap_fixed_base r(0);
     r.V = Base::V >> sh;
 // TODO check shift overflow?
@@ -1509,7 +1509,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   // left and right shift for int
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator<<(int sh) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator<<(int sh) const {
     ap_fixed_base r(0);
     bool isNeg = sh < 0;
     unsigned int ush = isNeg ? -sh : sh;
@@ -1520,7 +1520,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
     }
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator>>(int sh) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator>>(int sh) const {
     bool isNeg = sh < 0;
     unsigned int ush = isNeg ? -sh : sh;
     if (isNeg) {
@@ -1532,7 +1532,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   // left and right shift for ap_int.
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator<<(const ap_int_base<_AP_W2, true>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator<<(const ap_int_base<_AP_W2, true>& op2) const {
     // TODO the code seems not optimal. ap_fixed<8,8> << ap_int<2> needs only a
     // small mux, but integer need a big one!
     int sh = op2.to_int();
@@ -1540,20 +1540,20 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator>>(const ap_int_base<_AP_W2, true>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator>>(const ap_int_base<_AP_W2, true>& op2) const {
     int sh = op2.to_int();
     return operator>>(sh);
   }
 
   // left and right shift for ap_uint.
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator<<(const ap_int_base<_AP_W2, false>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator<<(const ap_int_base<_AP_W2, false>& op2) const {
     unsigned int sh = op2.to_uint();
     return operator<<(sh);
   }
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator>>(const ap_int_base<_AP_W2, false>& op2) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator>>(const ap_int_base<_AP_W2, false>& op2) const {
     unsigned int sh = op2.to_uint();
     return operator>>(sh);
   }
@@ -1561,7 +1561,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   // left and right shift for ap_fixed
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator<<(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator<<(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>&
           op2) {
     return operator<<(op2.to_ap_int_base());
@@ -1569,7 +1569,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base operator>>(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base operator>>(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>&
           op2) {
     return operator>>(op2.to_ap_int_base());
@@ -1579,25 +1579,25 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   // -------------------------------------------------------------------------
 
   // left shift assign.
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator<<=(const int sh) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator<<=(const int sh) {
     *this = operator<<(sh);
     return *this;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator<<=(const unsigned int sh) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator<<=(const unsigned int sh) {
     *this = operator<<(sh);
     return *this;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator<<=(const ap_int_base<_AP_W2, _AP_S2>& sh) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator<<=(const ap_int_base<_AP_W2, _AP_S2>& sh) {
     *this = operator<<(sh.to_int());
     return *this;
   }
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator<<=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator<<=(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>&
           sh) {
     *this = operator<<(sh.to_int());
@@ -1605,25 +1605,25 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   // right shift assign.
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator>>=(const int sh) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator>>=(const int sh) {
     *this = operator>>(sh);
     return *this;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator>>=(const unsigned int sh) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator>>=(const unsigned int sh) {
     *this = operator>>(sh);
     return *this;
   }
 
   template <int _AP_W2, bool _AP_S2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator>>=(const ap_int_base<_AP_W2, _AP_S2>& sh) {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator>>=(const ap_int_base<_AP_W2, _AP_S2>& sh) {
     *this = operator>>(sh.to_int());
     return *this;
   }
 
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
             ap_o_mode _AP_O2, int _AP_N2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base& operator>>=(
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base& operator>>=(
       const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>&
           sh) {
     *this = operator>>(sh.to_int());
@@ -1635,7 +1635,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 #define OP_CMP_AF(Sym)                                                         \
   template <int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,             \
             ap_o_mode _AP_O2, int _AP_N2>                                      \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator Sym(const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator Sym(const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, \
                                                _AP_O2, _AP_N2>& op2) const {   \
     enum { _AP_F = _AP_W - _AP_I, F2 = _AP_W2 - _AP_I2 };                      \
     if (_AP_F == F2)                                                           \
@@ -1658,7 +1658,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 // FIXME: Move compare with double out of struct ap_fixed_base defination
 //        and combine it with compare operator(double, ap_fixed_base)
 #define DOUBLE_CMP_AF(Sym) \
-  INLINE NODEBUG bool operator Sym(double d) const { return to_double() Sym d; }
+  AP_INLINE AP_NODEBUG bool operator Sym(double d) const { return to_double() Sym d; }
 
   DOUBLE_CMP_AF(>)
   DOUBLE_CMP_AF(<)
@@ -1668,14 +1668,14 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   DOUBLE_CMP_AF(!=)
 
   // Bit and Slice Select
-  INLINE NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator[](
+  AP_INLINE AP_NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator[](
       unsigned index) {
     _AP_WARNING(index >= _AP_W, "Attempting to read bit beyond MSB");
     return af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>(this, index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator[](
+  AP_INLINE AP_NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator[](
       const ap_int_base<_AP_W2, _AP_S2>& index) {
     _AP_WARNING(index < 0, "Attempting to read bit with negative index");
     _AP_WARNING(index >= _AP_W, "Attempting to read bit beyond MSB");
@@ -1683,19 +1683,19 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
                                                                 index.to_int());
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator[](unsigned index) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator[](unsigned index) const {
     _AP_WARNING(index >= _AP_W, "Attempting to read bit beyond MSB");
     return _AP_ROOT_op_get_bit(const_cast<ap_fixed_base*>(this)->V, index);
   }
 
-  INLINE NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> bit(
+  AP_INLINE AP_NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> bit(
       unsigned index) {
     _AP_WARNING(index >= _AP_W, "Attempting to read bit beyond MSB");
     return af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>(this, index);
   }
 
   template <int _AP_W2, bool _AP_S2>
-  INLINE NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> bit(
+  AP_INLINE AP_NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> bit(
       const ap_int_base<_AP_W2, _AP_S2>& index) {
     _AP_WARNING(index < 0, "Attempting to read bit with negative index");
     _AP_WARNING(index >= _AP_W, "Attempting to read bit beyond MSB");
@@ -1703,13 +1703,13 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
                                                                 index.to_int());
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool bit(unsigned index) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool bit(unsigned index) const {
     _AP_WARNING(index >= _AP_W, "Attempting to read bit beyond MSB");
     return _AP_ROOT_op_get_bit(const_cast<ap_fixed_base*>(this)->V, index);
   }
 
   template <int _AP_W2>
-  INLINE NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> get_bit(
+  AP_INLINE AP_NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> get_bit(
       const ap_int_base<_AP_W2, true>& index) {
     _AP_WARNING(index < _AP_I - _AP_W,
                 "Attempting to read bit with negative index");
@@ -1718,14 +1718,14 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
         this, index.to_int() + _AP_W - _AP_I);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool get_bit(int index) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool get_bit(int index) const {
     _AP_WARNING(index >= _AP_I, "Attempting to read bit beyond MSB");
     _AP_WARNING(index < _AP_I - _AP_W, "Attempting to read bit beyond MSB");
     return _AP_ROOT_op_get_bit(const_cast<ap_fixed_base*>(this)->V,
                                index + _AP_W - _AP_I);
   }
 #if 0
-  INLINE NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> get_bit(
+  AP_INLINE AP_NODEBUG af_bit_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> get_bit(
       int index) {
     _AP_WARNING(index < _AP_I - _AP_W,
               "Attempting to read bit with negative index");
@@ -1736,21 +1736,21 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 #endif
 
   template <int _AP_W2>
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool get_bit(const ap_int_base<_AP_W2, true>& index) const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool get_bit(const ap_int_base<_AP_W2, true>& index) const {
     _AP_WARNING(index >= _AP_I, "Attempting to read bit beyond MSB");
     _AP_WARNING(index < _AP_I - _AP_W, "Attempting to read bit beyond MSB");
     return _AP_ROOT_op_get_bit(const_cast<ap_fixed_base*>(this)->V,
                                index.to_int() + _AP_W - _AP_I);
   }
 
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(int Hi,
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(int Hi,
                                                                       int Lo) {
     _AP_WARNING((Hi >= _AP_W) || (Lo >= _AP_W), "Out of bounds in range()");
     return af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>(this, Hi, Lo);
   }
 
   // This is a must to strip constness to produce reference type.
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(
       int Hi, int Lo) const {
     _AP_WARNING((Hi >= _AP_W) || (Lo >= _AP_W), "Out of bounds in range()");
     return af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>(
@@ -1758,7 +1758,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) {
     int Hi = HiIdx.to_int();
@@ -1767,7 +1767,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) const {
     int Hi = HiIdx.to_int();
@@ -1775,26 +1775,26 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
     return this->range(Hi, Lo);
   }
 
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range() {
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range() {
     return this->range(_AP_W - 1, 0);
   }
 
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range() const {
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> range() const {
     return this->range(_AP_W - 1, 0);
   }
 
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
       int Hi, int Lo) {
     return this->range(Hi, Lo);
   }
 
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
       int Hi, int Lo) const {
     return this->range(Hi, Lo);
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) {
     int Hi = HiIdx.to_int();
@@ -1803,7 +1803,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 
   template <int _AP_W2, bool _AP_S2, int _AP_W3, bool _AP_S3>
-  INLINE NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
+  AP_INLINE AP_NODEBUG af_range_ref<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N> operator()(
       const ap_int_base<_AP_W2, _AP_S2>& HiIdx,
       const ap_int_base<_AP_W3, _AP_S3>& LoIdx) const {
     int Hi = HiIdx.to_int();
@@ -1811,22 +1811,22 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
     return this->range(Hi, Lo);
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool is_zero() const { return Base::V == (unsigned long)0; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool is_zero() const { return Base::V == (unsigned long)0; }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool is_neg() const {
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool is_neg() const {
     if (_AP_S && _AP_ROOT_op_get_bit(Base::V, _AP_W - 1)) return true;
     return false;
   }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG int wl() const { return _AP_W; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG int wl() const { return _AP_W; }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG int iwl() const { return _AP_I; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG int iwl() const { return _AP_I; }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_q_mode q_mode() const { return _AP_Q; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_q_mode q_mode() const { return _AP_Q; }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_o_mode o_mode() const { return _AP_O; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_o_mode o_mode() const { return _AP_O; }
 
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG int n_bits() const { return _AP_N; }
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG int n_bits() const { return _AP_N; }
 
   // print a string representation of this number in the given radix.
   // Radix support is 2, 8, 10, or 16.
@@ -1918,7 +1918,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
   }
 #else
   // XXX HLS will delete this in synthesis
-  INLINE NODEBUG char* to_string(unsigned char radix = 2, bool sign = _AP_S) const {
+  AP_INLINE AP_NODEBUG char* to_string(unsigned char radix = 2, bool sign = _AP_S) const {
     _AP_UNUSED_PARAM(radix);
     _AP_UNUSED_PARAM(sign);
     return 0;
@@ -1928,7 +1928,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base(const bool c1, const bool c2):B
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_not(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void b_not(
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& ret,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op) {
   ret.V = ~op.V;
@@ -1936,7 +1936,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_not(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_and(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void b_and(
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& ret,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
@@ -1945,7 +1945,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_and(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_or(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void b_or(
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& ret,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
@@ -1954,7 +1954,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_or(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_xor(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void b_xor(
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& ret,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
@@ -1964,7 +1964,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG void b_xor(
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N, int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
           ap_o_mode _AP_O2, int _AP_N2>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG void neg(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void neg(
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& ret,
     const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op) {
   ap_fixed_base<_AP_W2 + !_AP_S2, _AP_I2 + !_AP_S2, true, _AP_Q2, _AP_O2,
@@ -1977,7 +1977,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG void neg(
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N, int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
           ap_o_mode _AP_O2, int _AP_N2>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG void lshift(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void lshift(
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& ret,
     const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op,
     int i) {
@@ -1997,7 +1997,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG void lshift(
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N, int _AP_W2, int _AP_I2, bool _AP_S2, ap_q_mode _AP_Q2,
           ap_o_mode _AP_O2, int _AP_N2>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG void rshift(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG void rshift(
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& ret,
     const ap_fixed_base<_AP_W2, _AP_I2, _AP_S2, _AP_Q2, _AP_O2, _AP_N2>& op,
     int i) {
@@ -2026,7 +2026,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG void rshift(
 //
 
 #ifndef __SYNTHESIS__
-INLINE std::string scientificFormat(std::string& input) {
+AP_INLINE std::string scientificFormat(std::string& input) {
   if (input.length() == 0) return input;
 
   size_t decPosition = input.find('.');
@@ -2080,7 +2080,7 @@ INLINE std::string scientificFormat(std::string& input) {
   return ans;
 }
 
-INLINE NODEBUG std::string reduceToPrecision(std::string& input, int precision) {
+AP_INLINE AP_NODEBUG std::string reduceToPrecision(std::string& input, int precision) {
   bool isZero = true;
   size_t inputLen = input.length();
   for (size_t i = 0; i < inputLen && isZero; i++)
@@ -2210,7 +2210,7 @@ INLINE NODEBUG std::string reduceToPrecision(std::string& input, int precision) 
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-INLINE NODEBUG void print(
+AP_INLINE AP_NODEBUG void print(
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& x) {
   if (_AP_I > 0) {
     ap_int_base<_AP_I, _AP_S> p1;
@@ -2239,7 +2239,7 @@ INLINE NODEBUG void print(
 #ifndef __SYNTHESIS__
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-INLINE std::ostream& operator<<(
+AP_INLINE std::ostream& operator<<(
     std::ostream& out,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& x) {
   // TODO support std::ios_base::fmtflags
@@ -2262,7 +2262,7 @@ INLINE std::ostream& operator<<(
 #ifndef __SYNTHESIS__
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-INLINE std::istream& operator>>(
+AP_INLINE std::istream& operator>>(
     std::istream& in,
     ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& x) {
   double d;
@@ -2278,7 +2278,7 @@ INLINE std::istream& operator>>(
 #define AF_BIN_OP_WITH_INT_SF(BIN_OP, C_TYPE, _AP_W2, _AP_S2, RTYPE)     \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,           \
             ap_o_mode _AP_O, int _AP_N>                                  \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<    \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<    \
       _AP_W2, _AP_W2, _AP_S2>::RTYPE                                     \
   operator BIN_OP(                                                       \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op, \
@@ -2289,7 +2289,7 @@ INLINE std::istream& operator>>(
 #define AF_BIN_OP_WITH_INT(BIN_OP, C_TYPE, _AP_W2, _AP_S2, RTYPE)           \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N>                                     \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<       \
       _AP_W2, _AP_W2, _AP_S2>::RTYPE                                        \
   operator BIN_OP(                                                          \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op,    \
@@ -2298,7 +2298,7 @@ INLINE std::istream& operator>>(
   }                                                                         \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N>                                     \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<       \
       _AP_W2, _AP_W2, _AP_S2>::RTYPE                                        \
   operator BIN_OP(                                                          \
       C_TYPE i_op,                                                          \
@@ -2309,14 +2309,14 @@ INLINE std::istream& operator>>(
 #define AF_REL_OP_WITH_INT(REL_OP, C_TYPE, _AP_W2, _AP_S2)                  \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N>                                     \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator REL_OP(                                              \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator REL_OP(                                              \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op,    \
       C_TYPE i_op) {                                                        \
     return op.operator REL_OP(ap_fixed_base<_AP_W2, _AP_W2, _AP_S2>(i_op)); \
   }                                                                         \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N>                                     \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator REL_OP(                                              \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator REL_OP(                                              \
       C_TYPE i_op,                                                          \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op) {  \
     return ap_fixed_base<_AP_W2, _AP_W2, _AP_S2>(i_op).operator REL_OP(op); \
@@ -2325,7 +2325,7 @@ INLINE std::istream& operator>>(
 #define AF_ASSIGN_OP_WITH_INT(ASSIGN_OP, C_TYPE, _AP_W2, _AP_S2)               \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,                 \
             ap_o_mode _AP_O, int _AP_N>                                        \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>&              \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>&              \
   operator ASSIGN_OP(                                                          \
       ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op,             \
       C_TYPE i_op) {                                                           \
@@ -2335,7 +2335,7 @@ INLINE std::istream& operator>>(
 #define AF_ASSIGN_OP_WITH_INT_SF(ASSIGN_OP, C_TYPE, _AP_W2, _AP_S2)  \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,       \
             ap_o_mode _AP_O, int _AP_N>                              \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>&    \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>&    \
   operator ASSIGN_OP(                                                \
       ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op,   \
       C_TYPE i_op) {                                                 \
@@ -2405,7 +2405,7 @@ ALL_AF_OP_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 #define AF_BIN_OP_WITH_AP_INT(BIN_OP, RTYPE)                                \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N, int _AP_W2, bool _AP_S2>            \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename ap_fixed_base<_AP_W2, _AP_W2, _AP_S2>::template RType<    \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename ap_fixed_base<_AP_W2, _AP_W2, _AP_S2>::template RType<    \
       _AP_W, _AP_I, _AP_S>::RTYPE                                           \
   operator BIN_OP(                                                          \
       const ap_int_base<_AP_W2, _AP_S2>& i_op,                              \
@@ -2415,7 +2415,7 @@ ALL_AF_OP_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
                                                                             \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N, int _AP_W2, bool _AP_S2>            \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<       \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG typename ap_fixed_base<_AP_W, _AP_I, _AP_S>::template RType<       \
       _AP_W2, _AP_W2, _AP_S2>::RTYPE                                        \
   operator BIN_OP(                                                          \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op,    \
@@ -2426,7 +2426,7 @@ ALL_AF_OP_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 #define AF_REL_OP_WITH_AP_INT(REL_OP)                                       \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N, int _AP_W2, bool _AP_S2>            \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator REL_OP(                                              \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator REL_OP(                                              \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op,    \
       const ap_int_base<_AP_W2, _AP_S2>& i_op) {                            \
     return op.operator REL_OP(ap_fixed_base<_AP_W2, _AP_W2, _AP_S2>(i_op)); \
@@ -2434,7 +2434,7 @@ ALL_AF_OP_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
                                                                             \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,              \
             ap_o_mode _AP_O, int _AP_N, int _AP_W2, bool _AP_S2>            \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator REL_OP(                                              \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator REL_OP(                                              \
       const ap_int_base<_AP_W2, _AP_S2>& i_op,                              \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op) {  \
     return ap_fixed_base<_AP_W2, _AP_W2, _AP_S2>(i_op).operator REL_OP(op); \
@@ -2443,7 +2443,7 @@ ALL_AF_OP_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
 #define AF_ASSIGN_OP_WITH_AP_INT(ASSIGN_OP)                                    \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,                 \
             ap_o_mode _AP_O, int _AP_N, int _AP_W2, bool _AP_S2>               \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>&              \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>&              \
   operator ASSIGN_OP(                                                          \
       ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op,             \
       const ap_int_base<_AP_W2, _AP_S2>& i_op) {                               \
@@ -2452,7 +2452,7 @@ ALL_AF_OP_WITH_INT(ap_ulong, _AP_SIZE_ap_slong, false)
                                                                                \
   template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q,                 \
             ap_o_mode _AP_O, int _AP_N, int _AP_W2, bool _AP_S2>               \
-  HLS_CONSTEXPR_EXTRA INLINE NODEBUG ap_int_base<_AP_W2, _AP_S2>& operator ASSIGN_OP(                      \
+  HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG ap_int_base<_AP_W2, _AP_S2>& operator ASSIGN_OP(                      \
       ap_int_base<_AP_W2, _AP_S2>& i_op,                                       \
       const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op) {     \
     return i_op.operator ASSIGN_OP(op.to_ap_int_base());                       \
@@ -2490,7 +2490,7 @@ AF_REL_OP_WITH_AP_INT(<=)
 // Relational Operators with double
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator==(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator==(
     double op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
   return op2.operator==(op1);
@@ -2498,7 +2498,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator==(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator!=(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator!=(
     double op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
   return op2.operator!=(op1);
@@ -2506,7 +2506,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator!=(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator>(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator>(
     double op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
   return op2.operator<(op1);
@@ -2514,7 +2514,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator>(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator>=(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator>=(
     double op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
   return op2.operator<=(op1);
@@ -2522,7 +2522,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator>=(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator<(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator<(
     double op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
   return op2.operator>(op1);
@@ -2530,7 +2530,7 @@ HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator<(
 
 template <int _AP_W, int _AP_I, bool _AP_S, ap_q_mode _AP_Q, ap_o_mode _AP_O,
           int _AP_N>
-HLS_CONSTEXPR_EXTRA INLINE NODEBUG bool operator<=(
+HLS_CONSTEXPR_EXTRA AP_INLINE AP_NODEBUG bool operator<=(
     double op1,
     const ap_fixed_base<_AP_W, _AP_I, _AP_S, _AP_Q, _AP_O, _AP_N>& op2) {
   return op2.operator>=(op1);

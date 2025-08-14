@@ -1,5 +1,5 @@
 // Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
-// Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+// Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
 // 67d7842dbbe25473c3c32b93c0da8047785f30d78e8a024de1b57352245f9689
 
@@ -42,6 +42,8 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <iostream>
+#include <fstream>
 
 #endif // __SYNTHESIS__
 
@@ -151,5 +153,47 @@ private:
 
 #define hls_thread_local thread_local
 #endif // __SYNTHESIS__
+
+template <int count>
+class autorestart {
+public:
+  autorestart() {
+  }
+  ~autorestart() {
+  }
+  template <class T, class... Args>
+  void operator()(T fn, Args&&... args) {
+#ifndef __SYNTHESIS__
+//    To be used only when cosim supports multiple instances
+//    std::ofstream file;
+//    file.open ("hls_autorestart.txt", std::ios::app);
+//    if (file.is_open()) {
+//        file << count << std::endl;
+//        file.close();
+//    }
+//    file << count;
+//    file.close();
+    for (int i = 0; i < count; i++) {
+      fn(args...);
+    }
+#endif
+  }
+  template <class T, class... Args>
+  autorestart(T fn, Args&&... args) {
+#ifndef __SYNTHESIS__
+//    To be used only when cosim supports multiple instances
+//    std::ofstream file;
+//    file.open ("hls_autorestart.txt", std::ios::app);
+//    if (file.is_open()) {
+//        file << count << std::endl;
+//        file.close();
+//    }
+    for (int i = 0; i < count; i++) {
+      fn(args...);
+    }
+#endif
+  }
+};
+
 } 
 #endif
